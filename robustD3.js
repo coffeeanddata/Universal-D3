@@ -1,7 +1,7 @@
 //javascript functions that creates quick and easy cavnas for plotting scatterplots and histograms
 //
 //creating outline object
-outlineParameters = function(width, height, top, bottom, left, right){
+newOutline = function(width, height, top, bottom, left, right){
 	var barMargin   = {top:top, right:right, bottom:bottom, left: left},
 		chartWidth  = width  - barMargin.left - barMargin.right,
 		chartHeight = height - barMargin.top  - barMargin.bottom;
@@ -14,16 +14,16 @@ outlineParameters = function(width, height, top, bottom, left, right){
 }
 
 //creating canvas using svg elements (uniqueId, outline from outlineParametes)
-getCanvas = function(barId, outline){
+canvas = function(barId, outline){
 	var div = d3.select("body").append("div").attr("id", barId);
-	var canvas = div.append("svg")
+	var canvasSVG = div.append("svg")
 		.attr("width",  outline.width  + outline.leftMargin + outline.rightMargin)
 		.attr("height", outline.height + outline.topMargin + outline.bottomMargin)
-	graph = canvas.append("g")
+	graph = canvasSVG.append("g")
 		.attr("class", "mainGraph")
 		.attr("transform", "translate(" + chartOutline.leftMargin + "," +  chartOutline.topMargin + ")");		
 	return {
-		plot: canvas,
+		plot: canvasSVG,
 		outline: outline
 	};
 }
@@ -31,9 +31,9 @@ getCanvas = function(barId, outline){
 
 //scatterplot using bind, append, enter, update, and exit
 // only handles numeric vs numeric not really made to be used with categorical vs numeric plotting
-scatterPlot = function(canvas, data, xValue, yValue){
-	graph = canvas.plot.select("g.mainGraph");
-	outline = canvas.outline;
+scatterPlot = function(fullCanvas, data, xValue, yValue){
+	graph = fullcanvas.plot.select("g.mainGraph");
+	outline = fullcanvas.outline;
 
 	graph.selectAll(".axis").remove();
 	var xScale = d3.scale.linear().range([0, outline.width]);
@@ -88,21 +88,6 @@ groupByKey = function(data, mainKey){
 		.entries(data);
 	return nestedData;
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
