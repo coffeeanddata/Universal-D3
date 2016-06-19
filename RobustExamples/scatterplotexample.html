@@ -9,15 +9,37 @@
 	</head>
 	<body>
 		<script>
-			temporaryVariable = [
+			dataArray = [
 				{ "x": 1, "y": 5 },
 				{ "x": 2, "y": 10 },
 				{ "x": 3, "y": 15 },
 				{ "x": 4, "y": 20 },
 				{ "x": 5, "y": 25 }
 			];
-			var test = canvas("test", 750, 750);	
-			test.scatterPlot(temporaryVariable, "x", "y");
+			var newCanvas = canvas("canvas1", 750, 750);	
+			newCanvas.scatterPlot(dataArray, "x", "y");
+
+
+			//dataScrub is a case by case function
+			dataScrub = function(d, i){
+				//find a completely blank line, inorder to ignore
+				getArray = Object.keys(d).map(function (key) {return d[key] == undefined || d[key] == ""; });
+				if(!getArray.every(function(x) {return x == true; })){
+					return{
+						"class" : d.class,
+						"petalLength" : +d.petalLength,
+						"petalWidth"  : +d.petalWidth,
+						"sepalLength" : +d.sepalLength,
+						"sepalWidth"  : +d.sepalWidth,
+					}
+				} 
+			}
+			d3.csv("irisData.csv", dataScrub ,function(data){
+			var newCanvas = canvas("canvas2", 750, 750);	
+			newCanvas.scatterPlot(data, "petalLength", "petalWidth");
+			colorPalette = d3.scale.category10();
+			newCanvas.colorFeature(data, "class", colorPalette)
+			})
 
 		</script>
 	</body>

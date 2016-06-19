@@ -110,13 +110,21 @@ setCanvas.prototype.updateDesc = function(xLabel, yLabel, mainTitle){
 	newText = this.plot.selectAll("g.DescText").data(getArray);
 	newText.enter().append("text").attr("class", "DescText").attr("text-anchor", "middle");
 
-//	newText = newGroupsText.attr("transform", "rotate(90)").append("text")
 	newText.text(function(d) { return d.label; })
 		.attr("transform", function(d) { return "translate(" + d.xCord +"," + d.yCord + ") " + "rotate(" + d.rotate + ")"; })
 		.attr("font-size", function(d) { return d.fontSize; })
 	newText.exit().remove();
 }
 
+
+
+setCanvas.prototype.colorFeature = function(data, variableKey, color){
+	graph = this.plot.select("g.mainGraph");
+
+	getScatter = graph.selectAll("circle.scatterplotCircles").data(data);
+
+	getScatter.attr("fill", function(d) {console.log(d[variableKey]); return color(d[variableKey]); });
+}
 
 //really easy nesting function with d3.nesting as descending. 
 groupByKey = function(data, mainKey){
