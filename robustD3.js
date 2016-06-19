@@ -5,7 +5,7 @@
 
 // construction function 
 setCanvas =  function(width, height){
-	var chartMargin   = {top: height*.15, right: width*.10, bottom: height*.20, left: width*.20},
+	var chartMargin   = {top: height*.10, right: width*.10, bottom: height*.20, left: width*.15},
 		chartWidth  = width  - chartMargin.left - chartMargin.right,
 		chartHeight = height - chartMargin.top  - chartMargin.bottom;
 	this.width = chartWidth;
@@ -85,7 +85,38 @@ setCanvas.prototype.scatterPlot = function(data, xValue, yValue){
 		.transition().duration(1000)
 			.attr("r", 0)
 			.remove();
+	this.updateDesc(xValue.toUpperCase(), yValue.toUpperCase(), xValue.toUpperCase() + " vs. " + yValue.toUpperCase())
 }
+
+
+
+setCanvas.prototype.updateDesc = function(xLabel, yLabel, mainTitle){
+	this.plot.selectAll("text.DescText").remove();
+	if(this.mainDesc == undefined){
+		tempObj = {
+			"xLabel"    : {"xCord" : (this.leftMargin + this.width/2), "yCord" : (this.height + this.topMargin + this.bottomMargin/2), "rotate" : 0, "fontSize" : (this.width/20),"label" : xLabel},
+			"yLabel"    : {"xCord" : (this.leftMargin/2), "yCord" : (this.topMargin + this.height/2), "rotate" : -90, "fontSize" : (this.height/20),  "label" : yLabel},
+			"mainTitle" : {"xCord" : (this.leftMargin + this.width/2), "yCord" : (this.topMargin/2), "rotate" : 0, "fontSize" : (this.width/20), "label" : mainTitle}
+		}	
+		this.mainDesc = tempObj
+	}else {	
+		tempObj = this.mainDesc;
+		tempObj.xLabel.label = xLabel
+		tempObj.yLabel.label = yLabel
+		tempObj.mainTitle.label = mainTitle
+
+	}
+	getArray = Object.keys(tempObj).map(function (key) {return tempObj[key]});
+	newText = this.plot.selectAll("g.DescText").data(getArray);
+	newText.enter().append("text").attr("class", "DescText").attr("text-anchor", "middle");
+
+//	newText = newGroupsText.attr("transform", "rotate(90)").append("text")
+	newText.text(function(d) { return d.label; })
+		.attr("transform", function(d) { return "translate(" + d.xCord +"," + d.yCord + ") " + "rotate(" + d.rotate + ")"; })
+		.attr("font-size", function(d) { return d.fontSize; })
+	newText.exit().remove();
+}
+
 
 //really easy nesting function with d3.nesting as descending. 
 groupByKey = function(data, mainKey){
