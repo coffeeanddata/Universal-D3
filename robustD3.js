@@ -2,67 +2,56 @@
 //
 //creating outline object
 
-newOutline = function(width, height, top, bottom, left, right){
-	var barMargin   = {top:top, right:right, bottom:bottom, left: left},
-		chartWidth  = width  - barMargin.left - barMargin.right,
-		chartHeight = height - barMargin.top  - barMargin.bottom;
 
-	return({
-		width: chartWidth, height: chartHeight, 
-		topMargin: barMargin.top, bottomMargin: barMargin.bottom, 
-		leftMargin: barMargin.left, rightMargin: barMargin.right
-	});
-}
-
-/*
 // construction function 
-newOutline = function(width, height, top, bottom, left, right){
-	var barMargin   = {top:top, right:right, bottom:bottom, left: left},
-		chartWidth  = width  - barMargin.left - barMargin.right,
-		chartHeight = height - barMargin.top  - barMargin.bottom;
+setCanvas =  function(width, height){
+	var chartMargin   = {top: height*.15, right: width*.10, bottom: height*.20, left: width*.20},
+		chartWidth  = width  - chartMargin.left - chartMargin.right,
+		chartHeight = height - chartMargin.top  - chartMargin.bottom;
 	this.width = chartWidth;
 	this.height = chartHeight 
-	this.topMargin = barMargin.top
-	this.bottomMargin = barMargin.bottom
-	this.leftMargin =  barMargin.left
-	this.rightMargin =  barMargin.right
+	this.topMargin = chartMargin.top
+	this.bottomMargin = chartMargin.bottom
+	this.leftMargin =  chartMargin.left
+	this.rightMargin =  chartMargin.right
 }
 
-*/
 
 //creating canvas using svg elements (uniqueId, outline from outlineParametes)
-canvas = function(barId, outline){
+canvas = function(barId, height, width){
+	var outline = new setCanvas(width, height)
 	var div = d3.select("body").append("div").attr("id", barId).attr("class","robustD3Canvas");
 	var canvasSVG = div.append("svg")
 		.attr("width",  outline.width  + outline.leftMargin + outline.rightMargin)
 		.attr("height", outline.height + outline.topMargin + outline.bottomMargin)
 	graph = canvasSVG.append("g")
 		.attr("class", "mainGraph")
-		.attr("transform", "translate(" + chartOutline.leftMargin + "," +  chartOutline.topMargin + ")");		
-	return {
-		plot: canvasSVG,
-		outline: outline
-	};
+		.attr("transform", "translate(" + outline.leftMargin + "," +  outline.topMargin + ")");		
+	outline.plot = canvasSVG
+	return outline;
 }
+
+
 
 
 //scatterplot using bind, append, enter, update, and exit
 // only handles numeric vs numeric not really made to be used with categorical vs numeric plotting
-scatterPlot = function(fullCanvas, data, xValue, yValue){
-	graph = fullcanvas.plot.select("g.mainGraph");
-	outline = fullcanvas.outline;
+setCanvas.prototype.scatterPlot = function(data, xValue, yValue){
+	graph = this.plot.select("g.mainGraph");
+	outline = this;
+	rangeXValue = d3.extent(data, function(x) { return x[xValue]; });
+	rangeYValue = d3.extent(data, function(x) { return x[yValue]; });
 
 	graph.selectAll(".axis").remove();
 	var xScale = d3.scale.linear().range([0, outline.width]);
 	var yScale = d3.scale.linear().range([outline.height, 0]);
 
 	//map data values (x,y) to graph scale
-	xScale.domain(d3.extent(data, function(x) { return x[xValue]; }));
-	yScale.domain(d3.extent(data, function(x) { return x[yValue]; }));
-
+	xScale.domain([rangeXValue[0]*.8, rangeXValue[1] *1.2]);
+	yScale.domain([rangeYValue[0]*.8, rangeYValue[1] *1.2]);
 
 	// Create Axis group
-	var xAxisGroup = graph.append("g").attr("transform", "translate(0, " + outline.height + ")").attr("class", "y axis");
+	var xAxisGroup = graph.append("g").attr("transform", "translate(0, " + outline.height + ")").attr("class", "x axis");
 	var yAxisGroup = graph.append("g").attr("class", "y axis");
 
 	// Create Axis
@@ -73,11 +62,12 @@ scatterPlot = function(fullCanvas, data, xValue, yValue){
 	// Call Axis
 	xAxisGroup.transition().duration(1000).call(xAxis);
 	yAxisGroup.transition().duration(1000).call(yAxis);
+	graph.selectAll(".axis line, .axis path").style({ "fill":"none", "stroke": "black", "shape-rendering":"crispEdges" });
+	graph.selectAll(".axis text").style({"font-family": "sans-serif", "font-size": "11px"});
 
 
 	// Bind Data
 	var scatter = graph.selectAll("circle").data(data);
-
 	//Enter
 	scatter.enter().append("circle")
 		.attr("class", "scatterplotCircles")
