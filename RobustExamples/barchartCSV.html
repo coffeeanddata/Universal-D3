@@ -1,0 +1,39 @@
+<!DOCTYPE HTML>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title></title>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js" charset="utf-8"></script>
+		<script src="../robustD3.js" charset="utf-8"></script>
+		<link href="" rel = "stylesheet"/>
+	</head>
+	<body>
+		<script>
+			//dataScrub is a case by case function
+			dataScrub = function(d, i){
+				//find a completely blank line, inorder to ignore
+				getArray = Object.keys(d).map(function (key) {return d[key] == undefined || d[key] == ""; });
+				if(!getArray.every(function(x) {return x == true; })){
+					return{
+						"class" : d.class,
+						"petalLength" : +d.petalLength,
+						"petalWidth"  : +d.petalWidth,
+						"sepalLength" : +d.sepalLength,
+						"sepalWidth"  : +d.sepalWidth,
+					}
+				} 
+			}
+
+
+			d3.csv("irisData.csv", dataScrub ,function(data){
+				var newCanvas = canvas("canvas2", 750, 750);	
+				newCanvas.scatterPlot(data, "petalLength", "petalWidth");
+				colorPalette = d3.scale.category10();
+				newCanvas.colorFeature(data, "class", colorPalette)
+				newCanvas.updateDesc("Petal Length", "Petal Width", "Petal Length VS. Petal Width")
+				newCanvas.createTips(data,"petalWidth" )
+			})
+			
+		</script>
+	</body>
+</html>

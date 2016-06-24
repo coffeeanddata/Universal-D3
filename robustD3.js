@@ -27,7 +27,8 @@ canvas = function(barId, height, width){
 	graph = canvasSVG.append("g")
 		.attr("class", "mainGraph")
 		.attr("transform", "translate(" + outline.leftMargin + "," +  outline.topMargin + ")");		
-	outline.plot = canvasSVG
+	outline.plot = canvasSVG;
+	outline.plotID = barId;
 	return outline;
 }
 
@@ -37,8 +38,12 @@ canvas = function(barId, height, width){
 //scatterplot using bind, append, enter, update, and exit
 // only handles numeric vs numeric not really made to be used with categorical vs numeric plotting
 setCanvas.prototype.scatterPlot = function(data, xValue, yValue){
+	this.mainElement = "circle";
+	this.mainElementClass = "scatterPlotCircles"
+	var selectValue = this.mainElement + "." + this.mainElementClass;
 	graph = this.plot.select("g.mainGraph");
 	outline = this;
+
 	rangeXValue = d3.extent(data, function(x) { return x[xValue]; });
 	rangeYValue = d3.extent(data, function(x) { return x[yValue]; });
 
@@ -67,10 +72,10 @@ setCanvas.prototype.scatterPlot = function(data, xValue, yValue){
 
 
 	// Bind Data
-	var scatter = graph.selectAll("circle").data(data);
+	var scatter = graph.selectAll(selectValue).data(data);
 	//Enter
-	scatter.enter().append("circle")
-		.attr("class", "scatterplotCircles")
+	scatter.enter().append(this.mainElement)
+		.attr("class", this.mainElementClass)
 		.attr("r", 0);
 
 	//Update
@@ -85,7 +90,9 @@ setCanvas.prototype.scatterPlot = function(data, xValue, yValue){
 		.transition().duration(1000)
 			.attr("r", 0)
 			.remove();
+	if(this.mainDesc == undefined){
 	this.updateDesc(xValue.toUpperCase(), yValue.toUpperCase(), xValue.toUpperCase() + " vs. " + yValue.toUpperCase())
+	}
 }
 
 
@@ -94,9 +101,9 @@ setCanvas.prototype.updateDesc = function(xLabel, yLabel, mainTitle){
 	this.plot.selectAll("text.DescText").remove();
 	if(this.mainDesc == undefined){
 		tempObj = {
-			"xLabel"    : {"xCord" : (this.leftMargin + this.width/2), "yCord" : (this.height + this.topMargin + this.bottomMargin/2), "rotate" : 0, "fontSize" : (this.width/20),"label" : xLabel},
-			"yLabel"    : {"xCord" : (this.leftMargin/2), "yCord" : (this.topMargin + this.height/2), "rotate" : -90, "fontSize" : (this.height/20),  "label" : yLabel},
-			"mainTitle" : {"xCord" : (this.leftMargin + this.width/2), "yCord" : (this.topMargin/2), "rotate" : 0, "fontSize" : (this.width/20), "label" : mainTitle}
+			"xLabel"    : { "xCord" : (this.leftMargin + this.width/2), "yCord" : (this.height + this.topMargin + this.bottomMargin/2), "rotate" : 0, "fontSize" : (this.width/20),"label" : xLabel},
+			"yLabel"    : { "xCord" : (this.leftMargin/2), "yCord" : (this.topMargin + this.height/2), "rotate" : -90, "fontSize" : (this.height/20),  "label" : yLabel},
+			"mainTitle" : { "xCord" : (this.leftMargin + this.width/2), "yCord" : (this.topMargin/2), "rotate" : 0, "fontSize" : (this.width/20), "label" : mainTitle}
 		}	
 		this.mainDesc = tempObj
 	}else {	
@@ -104,7 +111,6 @@ setCanvas.prototype.updateDesc = function(xLabel, yLabel, mainTitle){
 		tempObj.xLabel.label = xLabel
 		tempObj.yLabel.label = yLabel
 		tempObj.mainTitle.label = mainTitle
-
 	}
 	getArray = Object.keys(tempObj).map(function (key) {return tempObj[key]});
 	newText = this.plot.selectAll("g.DescText").data(getArray);
@@ -119,12 +125,49 @@ setCanvas.prototype.updateDesc = function(xLabel, yLabel, mainTitle){
 
 
 setCanvas.prototype.colorFeature = function(data, variableKey, color){
+	var selectValue = this.mainElement + "." + this.mainElementClass;
 	graph = this.plot.select("g.mainGraph");
-
-	getScatter = graph.selectAll("circle.scatterplotCircles").data(data);
-
-	getScatter.attr("fill", function(d) {console.log(d[variableKey]); return color(d[variableKey]); });
+	getScatter = graph.selectAll(selectValue).data(data);
+	getScatter.attr("fill", function(d) { return color(d[variableKey]); });
+	this.colorScale = color;
+	this.colorScaleValue = variableKey;
 }
+
+
+setCanvas.prototype.createTips = function(data, toolTipText){
+	colorScale = this.colorScale;
+	colorScaleValue = this.colorScaleValue;
+	var graph = this.plot.select("g.mainGraph")
+	var selectors = d3.selectAll(this.mainElement);
+	
+	var divToolTip = d3.select("body").append("div").attr("class","divToolTip")
+		.style({
+			"opacity"        : "0", 
+			"position"       : "absolute",
+			"text-align"     : "center",			
+			"width"          :  "60px",					
+			"height"         :  "28px",					
+			"padding"        : "2px",		
+			"font"           : "12px sans-serif",		
+			"background"     : "lightsteelblue",	
+			"border"         : "0px",
+			"border-radius"  : "8px",			
+			"pointer-events" : "none"
+			});
+
+	selectors.on("mouseover", function (d) {
+		d3.select(this).attr("fill", "lightsteelblue");
+		divToolTip.transition().duration(500).style("opacity", ".9");
+		divToolTip.html(toolTipText+ ": " + d[toolTipText])
+			.style("left", (d3.event.pageX) + "px")		
+			.style("top", (d3.event.pageY - 30) + "px");		
+        })
+		.on("mouseout", function(d){
+			d3.select(this).attr("fill", colorScale(d[colorScaleValue]))
+			divToolTip.transition().duration(1000).style("opacity", 0);
+		})
+}
+
 
 //really easy nesting function with d3.nesting as descending. 
 groupByKey = function(data, mainKey){
