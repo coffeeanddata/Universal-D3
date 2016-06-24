@@ -27,11 +27,6 @@
 
 			d3.csv("irisData.csv", dataScrub ,function(data){
 				var newCanvas = canvas("canvas2", 750, 750);	
-				newCanvas.scatterPlot(data, "petalLength", "petalWidth");
-				colorPalette = d3.scale.category10();
-				newCanvas.colorFeature(data, "class", colorPalette)
-				newCanvas.updateDesc("Petal Length", "Petal Width", "Petal Length VS. Petal Width")
-				newCanvas.createTips(data,"petalWidth" )
 			})
 			
 		</script>
