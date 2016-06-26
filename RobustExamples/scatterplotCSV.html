@@ -3,8 +3,8 @@
 	<head>
 		<meta charset="utf-8">
 		<title></title>
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js" charset="utf-8"></script>
-		<script src="../robustD3.js" charset="utf-8"></script>
+		<script src="https://d3js.org/d3.v4.0.0-rc.2.js" charset="utf-8"></script>
+		<script src="robustD3.js" charset="utf-8"></script>
 		<link href="" rel = "stylesheet"/>
 	</head>
 	<body>
@@ -26,13 +26,15 @@
 
 
 			d3.csv("irisData.csv", dataScrub ,function(data){
+				console.log(data);
 				var newCanvas = canvas("canvas2", 750, 750);	
 				newCanvas.scatterPlot(data, "petalLength", "petalWidth");
-				colorPalette = d3.scale.category10();
+				colorPalette = d3.scaleOrdinal(d3.schemeCategory10);
 				newCanvas.colorFeature(data, "class", colorPalette)
 				newCanvas.updateDesc("Petal Length", "Petal Width", "Petal Length VS. Petal Width")
 				newCanvas.createTips(data,"petalWidth" )
-			})
+		
+		})
 			
 		</script>
 	</body>
