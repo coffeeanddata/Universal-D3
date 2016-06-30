@@ -1,8 +1,5 @@
 //javascript functions that creates quick and easy cavnas for plotting scatterplots and histograms
-//
 //creating outline object
-
-
 // construction function 
 setCanvas =  function(width, height){
 	var chartMargin   = {top: height*.10, right: width*.10, bottom: height*.20, left: width*.15},
@@ -18,7 +15,7 @@ setCanvas =  function(width, height){
 
 
 //creating canvas using svg elements (uniqueId, outline from outlineParametes)
-canvas = function(barId, height, width){
+canvas = function(barId, width, height){
 	var outline = new setCanvas(width, height)
 	var div = d3.select("body").append("div").attr("id", barId).attr("class","robustD3Canvas");
 	var canvasSVG = div.append("svg")
@@ -33,14 +30,22 @@ canvas = function(barId, height, width){
 }
 
 
+setCanvas.prototype.objectProperties = function(objectKeys, objectValues){
+	getObject = this;
+	objectKeys.forEach(function(key, index) {  getObject[key] = objectValues[index]; });
+}
+
 
 
 //scatterplot using bind, append, enter, update, and exit
 // only handles numeric vs numeric not really made to be used with categorical vs numeric plotting
 setCanvas.prototype.scatterPlot = function(data, xValue, yValue){
-	this.mainElement = "circle";
-	this.mainElementClass = "scatterPlotCircles"
+	objectKeys = ["mainElement", "mainElementClass", "colorScaleValue", "colorScale"]
+	objectVals = ["circle", "scatterPlotCircles", yValue, function(d) { return "#000000";}] 
+	this.objectProperties(objectKeys, objectVals)
 	var selectValue = this.mainElement + "." + this.mainElementClass;
+
+
 	graph = this.plot.select("g.mainGraph");
 	outline = this;
 
@@ -90,7 +95,7 @@ setCanvas.prototype.scatterPlot = function(data, xValue, yValue){
 			.attr("r", 0)
 			.remove();
 	if(this.mainDesc == undefined){
-	this.updateDesc(xValue.toUpperCase(), yValue.toUpperCase(), xValue.toUpperCase() + " vs. " + yValue.toUpperCase())
+		this.updateDesc(xValue.toUpperCase(), yValue.toUpperCase(), xValue.toUpperCase() + " vs. " + yValue.toUpperCase())
 	}
 }
 
@@ -113,9 +118,12 @@ setCanvas.prototype.updateDesc = function(xLabel, yLabel, mainTitle){
 	}
 	getArray = Object.keys(tempObj).map(function (key) {return tempObj[key]});
 	newText = this.plot.selectAll("g.DescText").data(getArray);
-	newText.enter().append("text").attr("class", "DescText").attr("text-anchor", "middle");
-
-	newText.text(function(d) { return d.label; })
+	newText.enter()
+		.append("text")
+		.attr("class", "DescText")
+		.attr("text-anchor", "middle")
+	.merge(newText)
+		.text(function(d) { return d.label; })
 		.attr("transform", function(d) { return "translate(" + d.xCord +"," + d.yCord + ") " + "rotate(" + d.rotate + ")"; })
 		.attr("font-size", function(d) { return d.fontSize; })
 	newText.exit().remove();
@@ -125,7 +133,7 @@ setCanvas.prototype.updateDesc = function(xLabel, yLabel, mainTitle){
 
 setCanvas.prototype.colorFeature = function(data, variableKey, color){
 	var selectValue = this.mainElement + "." + this.mainElementClass;
-	graph = this.plot.select("g.mainGraph");
+	var graph = this.plot.select("g.mainGraph");
 	getScatter = graph.selectAll(selectValue).data(data);
 	getScatter.attr("fill", function(d) { return color(d[variableKey]); });
 	this.colorScale = color;
@@ -144,7 +152,6 @@ setCanvas.prototype.createTips = function(data, toolTipText){
 		.style("background",   "lightsteelblue").style("border", "0px").style("border-radius",  "8px")			
 		.style("pointer-events", "none");
 	
-		
 
 	selectors.on("mouseover", function (d) {
 		d3.select(this).attr("fill", "lightsteelblue");
@@ -175,67 +182,63 @@ groupByKey = function(data, mainKey){
 
 
 // Barchart
-
-
 setCanvas.prototype.barChart = function(data, xValue, yValue){
-	this.mainElement = "rect";
-	this.mainElementClass = "barCharts"
+	objectKeys = ["mainElement", "mainElementClass", "colorScaleValue", "colorScale"]
+	objectVals = ["rect", "barCharts", yValue, function(d) { return "#000000";}] 
+	this.objectProperties(objectKeys, objectVals)
+
 	var selectValue = this.mainElement + "." + this.mainElementClass;
 	var graph = this.plot.select("g.mainGraph");
 	var outline = this;
-	console.log(this);
 
 
-	rangeXValue = d3.extent(data, function(x) { return x[xValue]; });
 	rangeYValue = d3.extent(data, function(x) { return x[yValue]; });
-
 	graph.selectAll(".axis").remove();
-	var xScale = d3.scaleLinear().range([0, outline.width]);
+
+
+	var xScale = d3.scaleBand().rangeRound([0, outline.width]).padding(0.1);
 	var yScale = d3.scaleLinear().range([outline.height, 0]);
 
 	//map data values (x,y) to graph scale
-	xScale.domain([rangeXValue[0]*.8, rangeXValue[1] *1.2]);
+	xScale.domain(data.map(function(d) { return d[xValue]; }));
 	yScale.domain([rangeYValue[0]*.8, rangeYValue[1] *1.2]);
-
 
 	// Create Axis group
 	var xAxisGroup = graph.append("g").attr("transform", "translate(0, " + outline.height + ")").attr("class", "x axis");
 	var yAxisGroup = graph.append("g").attr("class", "y axis");
 
+
 	// Create Axis
 	var xAxis = d3.axisBottom(xScale);
 	var yAxis = d3.axisLeft(yScale);
 
-		
 	// Call Axis
 	xAxisGroup.transition().duration(1000).call(xAxis);
 	yAxisGroup.transition().duration(1000).call(yAxis);
-
 
 	var	bars = graph.selectAll(selectValue).data(data);
 	bars.enter()
 		.append(this.mainElement)
 		.attr("class", this.mainElementClass)
-		.attr("width", 15)
+		.attr("width", xScale.bandwidth())
 	.merge(bars)
-		.attr("y", function(x) { return yScale(x[yValue]); })	//.attr("height", function(x) { return outline.height - yScale(x[yValue]); })
+		.attr("y", function(x) { return yScale(x[yValue]); })			
 		.attr("height", function(x) { return  outline.height - yScale(x[yValue]); })
-		.attr("x", function(d, i) {return i  * 20; })
+		.attr("x", function(d) {return xScale(d[xValue]); })
 }
 
 
 getFreq = function(data, variable){
-				freqObj = {}
-				data.forEach(function(d){ 
-					var getValue = d[variable];
-					freqObj[getValue] = freqObj[getValue] == undefined ? 1 : freqObj[getValue] + 1;
-				})
-				
-				var newArray = Object.keys(freqObj).map(function(key) { 
-					var tempObj = {};
-					tempObj[variable] = key
-					tempObj["Freq"]   = freqObj[key]
-					return tempObj;
-				});
-				return newArray;
-			}
+	freqObj = {}
+	data.forEach(function(d){ 
+		var getValue = d[variable];
+		freqObj[getValue] = freqObj[getValue] == undefined ? 1 : freqObj[getValue] + 1;
+	})
+	var newArray = Object.keys(freqObj).map(function(key) { 
+		var tempObj = {};
+		tempObj[variable] = key
+		tempObj["Freq"]   = freqObj[key]
+		return tempObj;
+	});
+	return newArray;
+}

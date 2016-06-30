@@ -4,7 +4,7 @@
 		<meta charset="utf-8">
 		<title></title>
 		<script src="https://d3js.org/d3.v4.0.0-rc.2.js" charset="utf-8"></script>
-		<script src="robustD3.js" charset="utf-8"></script>
+		<script src="../robustD3.js" charset="utf-8"></script>
 		<link href="" rel = "stylesheet"/>
 	</head>
 	<body>
@@ -14,7 +14,7 @@
 				//find a completely blank line, inorder to ignore
 				getArray = Object.keys(d).map(function (key) {return d[key] == undefined || d[key] == ""; });
 
-				if(     (!getArray.every(function(x) {return x == true; }) )){
+				if( (!getArray.every(function(x) {return x == true; }) )){
 					return{
 						"class" : d.class,
 						"petalLength" : +d.petalLength,
@@ -25,28 +25,13 @@
 				} 
 			}
 		
-			getFreq = function(data, variable){
-				freqObj = {}
-				data.forEach(function(d){ 
-					var getValue = d[variable];
-					freqObj[getValue] = freqObj[getValue] == undefined ? 1 : freqObj[getValue] + 1;
-				})
+			d3.csv("irisData.csv", dataScrub ,function(data){
+				data = getFreq(data, "petalLength")
+				var newCanvas = canvas("canvas2", 1000, 750);	
+				newCanvas.barChart(data, "petalLength", "Freq");
+				d3.schemaCategory10;
+				newCanvas.createTips(data, "Freq")
 				
-				var newArray = Object.keys(freqObj).map(function(key) { 
-					var tempObj = {};
-					tempObj[variable] = key
-					tempObj["Freq"]   = freqObj[key]
-					return tempObj;
-				});
-				return newArray;
-			}
-
-
-			d3.csv("shortIris.csv", dataScrub ,function(data){
-			//	data = getFreq(data, "petalLength")
-				var newCanvas = canvas("canvas2", 750, 750);	
-				newCanvas.barChart(data,"petalLength", "petalWidth");
-
 			})
 		</script>
 	</body>
