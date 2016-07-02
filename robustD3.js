@@ -2,21 +2,24 @@
 //creating outline object
 // construction function 
 setCanvas =  function(width, height){
+	this.outline = {}
+	var outline = this.outline;
 	var chartMargin   = {top: height*.10, right: width*.10, bottom: height*.20, left: width*.15},
 		chartWidth  = width  - chartMargin.left - chartMargin.right,
 		chartHeight = height - chartMargin.top  - chartMargin.bottom;
-	this.width = chartWidth;
-	this.height = chartHeight 
-	this.topMargin = chartMargin.top
-	this.bottomMargin = chartMargin.bottom
-	this.leftMargin =  chartMargin.left
-	this.rightMargin =  chartMargin.right
+	outline.width = chartWidth;
+	outline.height = chartHeight 
+	outline.topMargin = chartMargin.top
+	outline.bottomMargin = chartMargin.bottom
+	outline.leftMargin =  chartMargin.left
+	outline.rightMargin =  chartMargin.right
 }
 
 
 //creating canvas using svg elements (uniqueId, outline from outlineParametes)
 canvas = function(barId, width, height){
-	var outline = new setCanvas(width, height)
+	var setupCanvas = new setCanvas(width, height)
+	var outline = setupCanvas.outline;
 	var div = d3.select("body").append("div").attr("id", barId).attr("class","robustD3Canvas");
 	var canvasSVG = div.append("svg")
 		.attr("width",  outline.width  + outline.leftMargin + outline.rightMargin)
@@ -24,15 +27,20 @@ canvas = function(barId, width, height){
 	graph = canvasSVG.append("g")
 		.attr("class", "mainGraph")
 		.attr("transform", "translate(" + outline.leftMargin + "," +  outline.topMargin + ")");		
-	outline.plot = canvasSVG;
-	outline.plotID = barId;
-	return outline;
+	setupCanvas.plot = canvasSVG;
+	setupCanvas.plotID = barId;
+	setupCanvas.canvasProperties  = {};
+	return setupCanvas;
 }
 
 
 setCanvas.prototype.objectProperties = function(objectKeys, objectValues){
-	getObject = this;
-	objectKeys.forEach(function(key, index) {  getObject[key] = objectValues[index]; });
+	getObject = this.canvasProperties;
+	objectKeys.forEach(function(key, index) {  
+		if(getObject[key] == undefined){
+		getObject[key] = objectValues[index]; 
+		}
+	});
 }
 
 
@@ -40,14 +48,15 @@ setCanvas.prototype.objectProperties = function(objectKeys, objectValues){
 //scatterplot using bind, append, enter, update, and exit
 // only handles numeric vs numeric not really made to be used with categorical vs numeric plotting
 setCanvas.prototype.scatterPlot = function(data, xValue, yValue){
-	objectKeys = ["mainElement", "mainElementClass", "colorScaleValue", "colorScale"]
-	objectVals = ["circle", "scatterPlotCircles", yValue, function(d) { return "#000000";}] 
+	objectKeys = ["data", "mainElement", "mainElementClass", "colorScaleValue", "colorScale"]
+	objectVals = [data, "circle", "scatterPlotCircles", yValue, function(d) { return "#000000";}] 
 	this.objectProperties(objectKeys, objectVals)
+
+
 	var selectValue = this.mainElement + "." + this.mainElementClass;
-
-
-	graph = this.plot.select("g.mainGraph");
-	outline = this;
+	var graph = this.plot.select("g.mainGraph");
+	var outline = this.outline;
+	var CP  = this.canvasProperties;	
 
 	graphTrans = d3.transition().duration(1000);
 
@@ -79,15 +88,14 @@ setCanvas.prototype.scatterPlot = function(data, xValue, yValue){
 	// Bind Data
 	var scatter = graph.selectAll(selectValue).data(data);
 	//Enter
-	scatter.enter().append(this.mainElement)
-		.attr("class", this.mainElementClass)
+	scatter.enter().append(CP.mainElement)
+		.attr("class", CP.mainElementClass)
 		.attr("r", 0)
 	.merge(scatter)
 		.transition(graphTrans)
 		.attr("cx", function(x) { return xScale(x[xValue]); })
 		.attr("cy", function(x) { return yScale(x[yValue]); })
-		.attr("r", 5) 
-
+		.attr("r", outline.width/ 120) 
 
 	//Exit
 	scatter.exit()
@@ -103,11 +111,12 @@ setCanvas.prototype.scatterPlot = function(data, xValue, yValue){
 
 setCanvas.prototype.updateDesc = function(xLabel, yLabel, mainTitle){
 	this.plot.selectAll("text.DescText").remove();
+	var outline = this.outline;
 	if(this.mainDesc == undefined){
 		tempObj = {
-			"xLabel"    : { "xCord" : (this.leftMargin + this.width/2), "yCord" : (this.height + this.topMargin + this.bottomMargin/2), "rotate" : 0, "fontSize" : (this.width/20),"label" : xLabel},
-			"yLabel"    : { "xCord" : (this.leftMargin/2), "yCord" : (this.topMargin + this.height/2), "rotate" : -90, "fontSize" : (this.height/20),  "label" : yLabel},
-			"mainTitle" : { "xCord" : (this.leftMargin + this.width/2), "yCord" : (this.topMargin/2), "rotate" : 0, "fontSize" : (this.width/20), "label" : mainTitle}
+			"xLabel"    : { "xCord" : (outline.leftMargin + outline.width/2), "yCord" : (outline.height + outline.topMargin + outline.bottomMargin/2), "rotate" : 0, "fontSize" : ((outline.width + outline.height)/45),"label" : xLabel},
+			"yLabel"    : { "xCord" : (outline.leftMargin/2), "yCord" : (outline.topMargin + outline.height/2), "rotate" : -90, "fontSize" : ((outline.width + outline.height)/45),  "label" : yLabel},
+			"mainTitle" : { "xCord" : (outline.leftMargin + outline.width/2), "yCord" : (outline.topMargin/2), "rotate" : 0, "fontSize" : (outline.width/ 25), "label" : mainTitle}
 		}	
 		this.mainDesc = tempObj
 	}else {	
@@ -132,41 +141,49 @@ setCanvas.prototype.updateDesc = function(xLabel, yLabel, mainTitle){
 
 
 setCanvas.prototype.colorFeature = function(data, variableKey, color){
-	var selectValue = this.mainElement + "." + this.mainElementClass;
+	var CP = this.canvasProperties;
 	var graph = this.plot.select("g.mainGraph");
+
+	var selectValue = CP.mainElement + "." + CP.mainElementClass;
 	getScatter = graph.selectAll(selectValue).data(data);
 	getScatter.attr("fill", function(d) { return color(d[variableKey]); });
-	this.colorScale = color;
-	this.colorScaleValue = variableKey;
+	CP.colorScale = color;
+	CP.colorScaleValue = variableKey;
 }
 
 
 setCanvas.prototype.createTips = function(data, toolTipText){
-	colorScale = this.colorScale;
-	colorScaleValue = this.colorScaleValue;
+	var	CP = this.canvasProperties;
 	var graph = this.plot.select("g.mainGraph")
-	var selectors = d3.selectAll(this.mainElement);
+	var selectors = d3.selectAll(CP.mainElement);
+	var divToolTip = d3.select("body").append("div").attr("class","divToolTip")
+		.style("position",  "absolute").style("width", "80px").style("height", "auto")
+		.style("padding", "4px").style("background-color", "white").style("-webkit-border-radius","10px")
+        .style("-moz-border-radius", "10px").style("border-radius", "10px")
+		.style("-webkit-box-shadow", "4px 4px 10px rgba(0, 0, 0, 0.4)")
+		.style("-moz-box-shadow" ,"4px 4px 10px rgba(0, 0, 0, 0.4)")
+    	.style("box-shadow", "4px 4px 10px rgba(0, 0, 0, 0.4)")
+        .style("pointer-events", "none").style("opacity", "0");
+	/*
 	var divToolTip = d3.select("body").append("div").attr("class","divToolTip")
 		.style("opacity" , "0").style("position",  "absolute").style("text-align", "center").style("width",  "60px")					
 		.style("height",  "28px").style("padding",  "2px").style("font",  "12px sans-serif")
 		.style("background",   "lightsteelblue").style("border", "0px").style("border-radius",  "8px")			
 		.style("pointer-events", "none");
-	
+	*/
 
 	selectors.on("mouseover", function (d) {
 		d3.select(this).attr("fill", "lightsteelblue");
 		getDivToolTip = d3.select("div.divToolTip");
-		getDivToolTip.transition().duration(500).text(toolTipText + ": " + d[toolTipText])
+		getDivToolTip.transition().duration(250).text(toolTipText + ": " + d[toolTipText])
 			.style("left", (d3.event.pageX) + "px")		
 			.style("top", (d3.event.pageY - 30) + "px")
-			.style("opacity", ".9");
-
-	       
+			.style("opacity", 1);
 		})
 		.on("mouseout", function(d){
-			d3.select(this).attr("fill", colorScale(d[colorScaleValue]))
+			d3.select(this).attr("fill", CP.colorScale(d[CP.colorScaleValue]))
 		getDivToolTip = d3.select("div.divToolTip");
-		getDivToolTip.transition().duration(1000).style("opacity", 0);
+		getDivToolTip.transition().duration(500).style("opacity", 0);
 		})
 }
 
@@ -189,7 +206,8 @@ setCanvas.prototype.barChart = function(data, xValue, yValue){
 
 	var selectValue = this.mainElement + "." + this.mainElementClass;
 	var graph = this.plot.select("g.mainGraph");
-	var outline = this;
+	var outline = this.outline;
+	var CP = this.canvasProperties;	
 
 
 	rangeYValue = d3.extent(data, function(x) { return x[yValue]; });
@@ -218,13 +236,17 @@ setCanvas.prototype.barChart = function(data, xValue, yValue){
 
 	var	bars = graph.selectAll(selectValue).data(data);
 	bars.enter()
-		.append(this.mainElement)
-		.attr("class", this.mainElementClass)
+		.append(CP.mainElement)
+		.attr("class", CP.mainElementClass)
 		.attr("width", xScale.bandwidth())
 	.merge(bars)
+		.attr("fill", function(x) {return CP.colorScale(x[yValue]); })
 		.attr("y", function(x) { return yScale(x[yValue]); })			
 		.attr("height", function(x) { return  outline.height - yScale(x[yValue]); })
 		.attr("x", function(d) {return xScale(d[xValue]); })
+	if(this.mainDesc == undefined){
+		this.updateDesc(xValue.toUpperCase(), yValue.toUpperCase(), xValue.toUpperCase() + " vs. " + yValue.toUpperCase())
+	}
 }
 
 

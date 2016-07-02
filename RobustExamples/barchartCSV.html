@@ -28,10 +28,12 @@
 			d3.csv("irisData.csv", dataScrub ,function(data){
 				data = getFreq(data, "petalLength")
 				var newCanvas = canvas("canvas2", 1000, 750);	
+				newCanvas.canvasProperties.colorScale = function(d) { return "steelblue";}
 				newCanvas.barChart(data, "petalLength", "Freq");
-				d3.schemaCategory10;
 				newCanvas.createTips(data, "Freq")
-				
+				fillColor = function(d) { return "orange"; }
+				newCanvas.colorFeature(data, "Freq", fillColor)
+				newCanvas.updateDesc("Frequency", "Petal Length", "Petal Length Frequency Plot")
 			})
 		</script>
 	</body>
