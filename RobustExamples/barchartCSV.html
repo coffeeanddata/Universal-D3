@@ -9,31 +9,31 @@
 	</head>
 	<body>
 		<script>
+			// data provided: https://www.kaggle.com/mylesoneill/world-university-rankings
 			//dataScrub is a case by case function
 			dataScrub = function(d, i){
-				//find a completely blank line, inorder to ignore
-				getArray = Object.keys(d).map(function (key) {return d[key] == undefined || d[key] == ""; });
-
-				if( (!getArray.every(function(x) {return x == true; }) )){
-					return{
-						"class" : d.class,
-						"petalLength" : +d.petalLength,
-						"petalWidth"  : +d.petalWidth,
-						"sepalLength" : +d.sepalLength,
-						"sepalWidth"  : +d.sepalWidth,
-					}
-				} 
+					if((d.year == "2015") & (+d.world_rank <= 25)){
+					d.world_rank           = d.world_rank
+					d.national_rank        = +d.national_rank
+					d.quality_of_education = +d.quality_of_education
+					d.alumni_employment    = +d.alumni_employment
+					d.score                = +d.score
+					d.year 				   = +d.year
+					return d;
+				}
 			}
 		
-			d3.csv("irisData.csv", dataScrub ,function(data){
-				data = getFreq(data, "petalLength")
-				var newCanvas = canvas("canvas2", 1000, 750);	
-				newCanvas.canvasProperties.colorScale = function(d) { return "steelblue";}
-				newCanvas.barChart(data, "petalLength", "Freq");
-				newCanvas.createTips(data, "Freq")
+			d3.csv("world-university-ranking/cwurData.csv", dataScrub ,function(data){
+				var newCanvas = canvas("canvas2", 1200, 650);	
+				newCanvas.barChart(data, "institution", "score");
+				newCanvas.createTips(data, "score")
 				fillColor = function(d) { return "orange"; }
-				newCanvas.colorFeature(data, "Freq", fillColor)
-				newCanvas.updateDesc("Frequency", "Petal Length", "Petal Length Frequency Plot")
+				newCanvas.colorFeature(data, "instiution", fillColor)
+				newCanvas.updateDesc("", "Score", "Top 25 Institution Score")
+				newCanvas.rotateText("x", -90, "end", -1, -.5)
+				console.log(newCanvas)
+				debugger
+				
 			})
 		</script>
 	</body>

@@ -68,13 +68,14 @@ setCanvas.prototype.scatterPlot = function(data, xValue, yValue){
 	var yScale = d3.scaleLinear().range([outline.height, 0]);
 
 	//map data values (x,y) to graph scale
-	xScale.domain([rangeXValue[0]*.8, rangeXValue[1] *1.2]);
-	yScale.domain([rangeYValue[0]*.8, rangeYValue[1] *1.2]);
+	xScale.domain([rangeXValue[0]*.7, rangeXValue[1] *1.1]);
+	yScale.domain([rangeYValue[0]*.7, rangeYValue[1] *1.1]);
+
 
 
 	// Create Axis group
-	var xAxisGroup = graph.append("g").attr("transform", "translate(0, " + outline.height + ")").attr("class", "x axis");
-	var yAxisGroup = graph.append("g").attr("class", "y axis");
+	var xAxisGroup = graph.append("g").attr("transform", "translate(0, " + outline.height + ")").attr("class", "xAxis axis");
+	var yAxisGroup = graph.append("g").attr("class", "yAxis axis");
 
 		
 	var xAxis = d3.axisBottom(xScale);
@@ -82,8 +83,8 @@ setCanvas.prototype.scatterPlot = function(data, xValue, yValue){
 
 	
 	// Call Axis
-	xAxisGroup.transition(graphTrans).call(xAxis);
-	yAxisGroup.transition(graphTrans).call(yAxis);
+	xAxisGroup.transition().duration(1000).call(xAxis).selectAll("text").attr("class", "xAxisText axisText");
+	yAxisGroup.transition().duration(1000).call(yAxis).selectAll("text").attr("class", "yAxisText axisText");
 	
 	// Bind Data
 	var scatter = graph.selectAll(selectValue).data(data);
@@ -114,9 +115,24 @@ setCanvas.prototype.updateDesc = function(xLabel, yLabel, mainTitle){
 	var outline = this.outline;
 	if(this.mainDesc == undefined){
 		tempObj = {
-			"xLabel"    : { "xCord" : (outline.leftMargin + outline.width/2), "yCord" : (outline.height + outline.topMargin + outline.bottomMargin/2), "rotate" : 0, "fontSize" : ((outline.width + outline.height)/45),"label" : xLabel},
-			"yLabel"    : { "xCord" : (outline.leftMargin/2), "yCord" : (outline.topMargin + outline.height/2), "rotate" : -90, "fontSize" : ((outline.width + outline.height)/45),  "label" : yLabel},
-			"mainTitle" : { "xCord" : (outline.leftMargin + outline.width/2), "yCord" : (outline.topMargin/2), "rotate" : 0, "fontSize" : (outline.width/ 25), "label" : mainTitle}
+			"xLabel"    : { "xCord"    : (outline.leftMargin + outline.width/2),
+							"yCord"    : (outline.height + outline.topMargin + outline.bottomMargin/2),
+							"rotate"   : 0, 
+							"fontSize" : ((outline.width + outline.height)/60),
+							"label"    : xLabel
+						  },
+			"yLabel"    : { "xCord"    : (outline.leftMargin/2), 
+							"yCord"    : (outline.topMargin + outline.height/2),
+							"rotate"   : -90, 
+							"fontSize" : ((outline.width + outline.height)/60),
+							"label"    : yLabel
+						  },
+			"mainTitle" : { "xCord"    : (outline.leftMargin + outline.width/2),
+							"yCord"    : (outline.topMargin/2), 
+							"rotate"   : 0,  
+							"fontSize" : (outline.width/ 40),
+							"label"    : mainTitle
+						 }
 		}	
 		this.mainDesc = tempObj
 	}else {	
@@ -164,13 +180,8 @@ setCanvas.prototype.createTips = function(data, toolTipText){
 		.style("-moz-box-shadow" ,"4px 4px 10px rgba(0, 0, 0, 0.4)")
     	.style("box-shadow", "4px 4px 10px rgba(0, 0, 0, 0.4)")
         .style("pointer-events", "none").style("opacity", "0");
-	/*
-	var divToolTip = d3.select("body").append("div").attr("class","divToolTip")
-		.style("opacity" , "0").style("position",  "absolute").style("text-align", "center").style("width",  "60px")					
-		.style("height",  "28px").style("padding",  "2px").style("font",  "12px sans-serif")
-		.style("background",   "lightsteelblue").style("border", "0px").style("border-radius",  "8px")			
-		.style("pointer-events", "none");
-	*/
+		// tool tip theme 
+		//http://chimera.labs.oreilly.com/books/1230000000345/ch10.html#_hover_to_highlight
 
 	selectors.on("mouseover", function (d) {
 		d3.select(this).attr("fill", "lightsteelblue");
@@ -200,8 +211,8 @@ groupByKey = function(data, mainKey){
 
 // Barchart
 setCanvas.prototype.barChart = function(data, xValue, yValue){
-	objectKeys = ["mainElement", "mainElementClass", "colorScaleValue", "colorScale"]
-	objectVals = ["rect", "barCharts", yValue, function(d) { return "#000000";}] 
+	objectKeys = ["data","yValue", "xValue", "mainElement", "mainElementClass", "colorScaleValue", "colorScale"]
+	objectVals = [data, yValue, xValue, "rect", "barChart", yValue, function(d) { return "#000000";}] 
 	this.objectProperties(objectKeys, objectVals)
 
 	var selectValue = this.mainElement + "." + this.mainElementClass;
@@ -209,31 +220,34 @@ setCanvas.prototype.barChart = function(data, xValue, yValue){
 	var outline = this.outline;
 	var CP = this.canvasProperties;	
 
+	this.createAxis("string", "number")
+	yScale = this.axisProperties.yScale;
+	xScale = this.axisProperties.xScale;
+	/*
+//	rangeYValue = d3.extent(data, function(x) { return x[yValue]; });
+//	graph.selectAll(".axis").remove();
 
-	rangeYValue = d3.extent(data, function(x) { return x[yValue]; });
-	graph.selectAll(".axis").remove();
-
-
+	// note the rounding, if the width/length < 1, then barplot bandwith will be rounded to 0
 	var xScale = d3.scaleBand().rangeRound([0, outline.width]).padding(0.1);
-	var yScale = d3.scaleLinear().range([outline.height, 0]);
+	//	var yScale = d3.scaleLinear().range([outline.height, 0]);
 
 	//map data values (x,y) to graph scale
 	xScale.domain(data.map(function(d) { return d[xValue]; }));
-	yScale.domain([rangeYValue[0]*.8, rangeYValue[1] *1.2]);
+	//	yScale.domain([rangeYValue[0]*.7, rangeYValue[1] *1.1]);
 
 	// Create Axis group
-	var xAxisGroup = graph.append("g").attr("transform", "translate(0, " + outline.height + ")").attr("class", "x axis");
-	var yAxisGroup = graph.append("g").attr("class", "y axis");
+	var xAxisGroup = graph.append("g").attr("transform", "translate(0, " + outline.height + ")").attr("class", "xAxis axis");
+	//var yAxisGroup = graph.append("g").attr("class", "yAxis axis");
 
 
 	// Create Axis
 	var xAxis = d3.axisBottom(xScale);
-	var yAxis = d3.axisLeft(yScale);
+	//var yAxis = d3.axisLeft(yScale);
 
 	// Call Axis
-	xAxisGroup.transition().duration(1000).call(xAxis);
-	yAxisGroup.transition().duration(1000).call(yAxis);
-
+	xAxisGroup.transition().duration(1000).call(xAxis).selectAll("text").attr("class", "xAxisText axisText");
+	//yAxisGroup.transition().duration(1000).call(yAxis).selectAll("text").attr("class", "yAxisText axisText");
+*/
 	var	bars = graph.selectAll(selectValue).data(data);
 	bars.enter()
 		.append(CP.mainElement)
@@ -249,13 +263,13 @@ setCanvas.prototype.barChart = function(data, xValue, yValue){
 	}
 }
 
-
+//returns new object: frequency table result (used for barplot)
 getFreq = function(data, variable){
 	freqObj = {}
 	data.forEach(function(d){ 
 		var getValue = d[variable];
 		freqObj[getValue] = freqObj[getValue] == undefined ? 1 : freqObj[getValue] + 1;
-	})
+	}) 
 	var newArray = Object.keys(freqObj).map(function(key) { 
 		var tempObj = {};
 		tempObj[variable] = key
@@ -264,3 +278,122 @@ getFreq = function(data, variable){
 	});
 	return newArray;
 }
+
+
+setCanvas.prototype.rotateText = function(axis, rotate, anchor, moveUp, moveSide){
+	var graph = this.plot.select("g.mainGraph g.xAxis");
+	var getAxisText = graph.selectAll("text");
+	getAxisText.attr("transform", "rotate(" + rotate + ")")	
+	.attr("dx", moveUp + "em")
+    .attr("dy", moveSide + "em")
+	.attr("text-anchor", anchor);
+}
+
+
+setCanvas.prototype.setAxisFunctions = function(){
+	return {
+		numberbarChart : "numericBarPlot",
+		stringbarChart : "charBarPlot"
+	}
+}
+
+setCanvas.prototype.charBarPlot = function(val){
+	var	data     = this.canvasProperties.data;
+	var outline  = this.outline;
+	var valScale = d3.scaleBand().rangeRound([0, outline.width]).padding(0.1);
+
+	//map data values (x,y) to graph scale
+	valScale.domain(data.map(function(d) { return d[val]; }));
+
+	// Create Axis group
+	var axisGroup = graph.append("g").attr("transform", "translate(0, " + outline.height + ")").attr("class", "xAxis axis");
+
+	// Create Axis
+	var setAxis = d3.axisBottom(valScale);
+
+	// Call Axis
+	axisGroup.transition().duration(1000).call(setAxis).selectAll("text").attr("class", "xAxisText axisText");
+	return valScale;
+
+}
+
+
+setCanvas.prototype.numericBarPlot = function(val){
+	var	data    = this.canvasProperties.data;
+	var outline = this.outline;
+	rangeVal    = d3.extent(data, function(x) { return x[val]; });
+
+	var valScale = d3.scaleLinear().range([outline.height, 0]);
+
+	//map data values (x,y) to graph scale
+	valScale.domain([rangeVal[0]*.7, rangeVal[1] *1.1]);
+
+	// Create Axis group
+	var axisGroup = graph.append("g").attr("class", "yAxis axis");
+
+	// Create Axis
+	var setAxis = d3.axisLeft(valScale);
+
+	// Call Axis
+	axisGroup.transition().duration(1000).call(setAxis).selectAll("text").attr("class", "yAxisText axisText");
+	return valScale;
+}
+
+setCanvas.prototype.createAxis = function(xType, yType){
+	this.axisProperties = {}
+	var axisObject = this.axisProperties;
+	axisObject.xType = xType, axisObject.yType = yType;
+
+	allAxisFunctions = this.setAxisFunctions()
+	var graphClass =	this.canvasProperties.mainElementClass;
+
+	
+
+	graph.selectAll(".axis").remove();
+	this.axisProperties.yScale = this[allAxisFunctions[yType + graphClass]](this.canvasProperties.yValue)
+	this.axisProperties.xScale = this[allAxisFunctions[xType + graphClass]](this.canvasProperties.xValue) 
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
