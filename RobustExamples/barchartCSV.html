@@ -24,15 +24,20 @@
 			}
 		
 			d3.csv("world-university-ranking/cwurData.csv", dataScrub ,function(data){
-				var newCanvas = canvas("canvas2", 1200, 650);	
-				newCanvas.barChart(data, "institution", "score");
-				newCanvas.createTips(data, "score")
+				var barPlot = canvas("barPlot", 1000, 650);	
+				barPlot.barChart(data, "institution", "score");
+				barPlot.createTips(data, "score")
 				fillColor = function(d) { return "orange"; }
-				newCanvas.colorFeature(data, "instiution", fillColor)
-				newCanvas.updateDesc("", "Score", "Top 25 Institution Score")
-				newCanvas.rotateText("x", -90, "end", -1, -.5)
-				console.log(newCanvas)
-				debugger
+				barPlot.colorFeature(data, "instiution", fillColor)
+				barPlot.updateDesc("", "Score", "Top 25 Institution Score")
+				barPlot.rotateText("x", -90, "end", -1, -.5)
+		
+				consol.log(data)
+				var horizontalBarPlot = canvas("barPlot", 1100, 650);	
+				horizontalBarPlot .barChart(data, "score", "institution");
+				horizontalBarPlot.createTips(data, "score")
+				horizontalBarPlot.colorFeature(data, "instiution", fillColor)
+				horizontalBarPlot.updateDesc("Score", "", "Top 25 Institution Score")
 				
 			})
 		</script>

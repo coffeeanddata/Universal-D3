@@ -48,8 +48,8 @@ setCanvas.prototype.objectProperties = function(objectKeys, objectValues){
 //scatterplot using bind, append, enter, update, and exit
 // only handles numeric vs numeric not really made to be used with categorical vs numeric plotting
 setCanvas.prototype.scatterPlot = function(data, xValue, yValue){
-	objectKeys = ["data", "mainElement", "mainElementClass", "colorScaleValue", "colorScale"]
-	objectVals = [data, "circle", "scatterPlotCircles", yValue, function(d) { return "#000000";}] 
+	objectKeys = ["data", "xValue", "yValue", "mainElement", "mainElementClass", "colorScaleValue", "colorScale"]
+	objectVals = [data, xValue, yValue, "circle", "scatterPlotCircles", yValue, function(d) { return "#000000";}] 
 	this.objectProperties(objectKeys, objectVals)
 
 
@@ -59,33 +59,9 @@ setCanvas.prototype.scatterPlot = function(data, xValue, yValue){
 	var CP  = this.canvasProperties;	
 
 	graphTrans = d3.transition().duration(1000);
-
-	rangeXValue = d3.extent(data, function(x) { return x[xValue]; });
-	rangeYValue = d3.extent(data, function(x) { return x[yValue]; });
-
-	graph.selectAll(".axis").remove();
-	var xScale = d3.scaleLinear().range([0, outline.width]);
-	var yScale = d3.scaleLinear().range([outline.height, 0]);
-
-	//map data values (x,y) to graph scale
-	xScale.domain([rangeXValue[0]*.7, rangeXValue[1] *1.1]);
-	yScale.domain([rangeYValue[0]*.7, rangeYValue[1] *1.1]);
-
-
-
-	// Create Axis group
-	var xAxisGroup = graph.append("g").attr("transform", "translate(0, " + outline.height + ")").attr("class", "xAxis axis");
-	var yAxisGroup = graph.append("g").attr("class", "yAxis axis");
-
-		
-	var xAxis = d3.axisBottom(xScale);
-	var yAxis = d3.axisLeft(yScale);
-
-	
-	// Call Axis
-	xAxisGroup.transition().duration(1000).call(xAxis).selectAll("text").attr("class", "xAxisText axisText");
-	yAxisGroup.transition().duration(1000).call(yAxis).selectAll("text").attr("class", "yAxisText axisText");
-	
+	this.createAxis("number", "number")
+	yScale = this.axisProperties.yScale;
+	xScale = this.axisProperties.xScale;
 	// Bind Data
 	var scatter = graph.selectAll(selectValue).data(data);
 	//Enter
@@ -215,52 +191,50 @@ setCanvas.prototype.barChart = function(data, xValue, yValue){
 	objectVals = [data, yValue, xValue, "rect", "barChart", yValue, function(d) { return "#000000";}] 
 	this.objectProperties(objectKeys, objectVals)
 
-	var selectValue = this.mainElement + "." + this.mainElementClass;
-	var graph = this.plot.select("g.mainGraph");
-	var outline = this.outline;
-	var CP = this.canvasProperties;	
+	var selectValue = this.mainElement + "." + this.mainElementClass,
+		graph = this.plot.select("g.mainGraph"),
+		outline = this.outline,
+		CP = this.canvasProperties;	
 
-	this.createAxis("string", "number")
+
+	var typeofX = typeof(data[0][xValue]), typeofY = typeof(data[0][yValue]);
+	this.barChartLogistics(typeofX, typeofY)
+	this.createAxis(typeofX, typeofY);
 	yScale = this.axisProperties.yScale;
 	xScale = this.axisProperties.xScale;
-	/*
-//	rangeYValue = d3.extent(data, function(x) { return x[yValue]; });
-//	graph.selectAll(".axis").remove();
-
-	// note the rounding, if the width/length < 1, then barplot bandwith will be rounded to 0
-	var xScale = d3.scaleBand().rangeRound([0, outline.width]).padding(0.1);
-	//	var yScale = d3.scaleLinear().range([outline.height, 0]);
-
-	//map data values (x,y) to graph scale
-	xScale.domain(data.map(function(d) { return d[xValue]; }));
-	//	yScale.domain([rangeYValue[0]*.7, rangeYValue[1] *1.1]);
-
-	// Create Axis group
-	var xAxisGroup = graph.append("g").attr("transform", "translate(0, " + outline.height + ")").attr("class", "xAxis axis");
-	//var yAxisGroup = graph.append("g").attr("class", "yAxis axis");
 
 
-	// Create Axis
-	var xAxis = d3.axisBottom(xScale);
-	//var yAxis = d3.axisLeft(yScale);
-
-	// Call Axis
-	xAxisGroup.transition().duration(1000).call(xAxis).selectAll("text").attr("class", "xAxisText axisText");
-	//yAxisGroup.transition().duration(1000).call(yAxis).selectAll("text").attr("class", "yAxisText axisText");
-*/
 	var	bars = graph.selectAll(selectValue).data(data);
 	bars.enter()
 		.append(CP.mainElement)
 		.attr("class", CP.mainElementClass)
-		.attr("width", xScale.bandwidth())
 	.merge(bars)
-		.attr("fill", function(x) {return CP.colorScale(x[yValue]); })
-		.attr("y", function(x) { return yScale(x[yValue]); })			
-		.attr("height", function(x) { return  outline.height - yScale(x[yValue]); })
-		.attr("x", function(d) {return xScale(d[xValue]); })
+		.attr("width",  this.canvasProperties.barChartLogistics.widthFunction)
+		.attr("height", this.canvasProperties.barChartLogistics.heightFunction)
+		.attr("fill",   function(x) { return CP.colorScale(x[yValue]); })
+		.attr("y",      function(x) { return yScale(x[yValue]); })			
+		.attr("x",    this.canvasProperties.barChartLogistics.xFunction) 
 	if(this.mainDesc == undefined){
 		this.updateDesc(xValue.toUpperCase(), yValue.toUpperCase(), xValue.toUpperCase() + " vs. " + yValue.toUpperCase())
 	}
+}
+
+
+setCanvas.prototype.barChartLogistics = function(typeofX, typeofY){
+	this.canvasProperties.barChartLogistics = {}
+	var	BCLog = this.canvasProperties.barChartLogistics, outline = this.outline, CP = this.canvasProperties
+
+	BCLog.heightFunction = (typeofY == "number") ?
+		function(x) { return outline.height - yScale(x[CP.yValue]); } :
+		function(x) { return yScale.bandwidth(); }
+	BCLog.xFunction = (typeofX == "number") ?
+		0 :
+		function(x) {return   xScale(x[CP.xValue]) } 
+
+	BCLog.widthFunction  = (typeofX == "number") ? 
+		function(x) {return   xScale(x[CP.xValue]) } :
+		function(x) { return xScale.bandwidth(); } 
+
 }
 
 //returns new object: frequency table result (used for barplot)
@@ -292,66 +266,73 @@ setCanvas.prototype.rotateText = function(axis, rotate, anchor, moveUp, moveSide
 
 setCanvas.prototype.setAxisFunctions = function(){
 	return {
+		numberscatterPlotCircles : "numericBarPlot",
 		numberbarChart : "numericBarPlot",
 		stringbarChart : "charBarPlot"
 	}
 }
 
-setCanvas.prototype.charBarPlot = function(val){
+setCanvas.prototype.charBarPlot = function(val, axisValue){
 	var	data     = this.canvasProperties.data;
 	var outline  = this.outline;
-	var valScale = d3.scaleBand().rangeRound([0, outline.width]).padding(0.1);
+
+	this.axisProperties[axisValue + "Outline"] = (axisValue == "y") ? [outline.height, 0] : [0, outline.width];
+	var valScale = d3.scaleLinear().range(this.axisProperties[axisValue + "Outline"]);
+	var valScale = d3.scaleBand().rangeRound(this.axisProperties[axisValue + "Outline"]).padding(0.1);
 
 	//map data values (x,y) to graph scale
 	valScale.domain(data.map(function(d) { return d[val]; }));
-
 	// Create Axis group
-	var axisGroup = graph.append("g").attr("transform", "translate(0, " + outline.height + ")").attr("class", "xAxis axis");
+	var axisGroup = (axisValue == "y") ?  graph.append("g").attr("class", axisValue + "Axis axis") : graph.append("g").attr("transform", "translate(0, " + outline.height + ")").attr("class", axisValue + "Axis axis");
 
 	// Create Axis
-	var setAxis = d3.axisBottom(valScale);
+	var setAxis = (axisValue == "y") ?  d3.axisLeft(valScale) : d3.axisBottom(valScale);
 
 	// Call Axis
-	axisGroup.transition().duration(1000).call(setAxis).selectAll("text").attr("class", "xAxisText axisText");
+	axisGroup.transition().duration(1000).call(setAxis).selectAll("text").attr("class", axisValue + "AxisText axisText");
 	return valScale;
-
 }
 
 
-setCanvas.prototype.numericBarPlot = function(val){
+setCanvas.prototype.numericBarPlot = function(val, axisValue){
 	var	data    = this.canvasProperties.data;
 	var outline = this.outline;
 	rangeVal    = d3.extent(data, function(x) { return x[val]; });
 
-	var valScale = d3.scaleLinear().range([outline.height, 0]);
+	this.axisProperties[axisValue + "Outline"] = (axisValue == "y") ? [outline.height, 0] : [0, outline.width];
+	var valScale = d3.scaleLinear().range(this.axisProperties[axisValue + "Outline"]);
 
 	//map data values (x,y) to graph scale
 	valScale.domain([rangeVal[0]*.7, rangeVal[1] *1.1]);
 
 	// Create Axis group
-	var axisGroup = graph.append("g").attr("class", "yAxis axis");
+	var axisGroup = (axisValue == "y") ?  graph.append("g").attr("class", axisValue + "Axis axis") : graph.append("g").attr("transform", "translate(0, " + outline.height + ")").attr("class", axisValue + "Axis axis");
 
 	// Create Axis
-	var setAxis = d3.axisLeft(valScale);
+	var setAxis = (axisValue == "y") ?  d3.axisLeft(valScale) : d3.axisBottom(valScale);
 
 	// Call Axis
-	axisGroup.transition().duration(1000).call(setAxis).selectAll("text").attr("class", "yAxisText axisText");
+	axisGroup.transition().duration(1000).call(setAxis).selectAll("text").attr("class", axisValue + "AxisText axisText");
 	return valScale;
 }
 
+
+
+
 setCanvas.prototype.createAxis = function(xType, yType){
 	this.axisProperties = {}
+	this.axisProperties.NumericValue = (yType == "number") ? "height" : "width";
 	var axisObject = this.axisProperties;
 	axisObject.xType = xType, axisObject.yType = yType;
 
 	allAxisFunctions = this.setAxisFunctions()
 	var graphClass =	this.canvasProperties.mainElementClass;
 
-	
+
 
 	graph.selectAll(".axis").remove();
-	this.axisProperties.yScale = this[allAxisFunctions[yType + graphClass]](this.canvasProperties.yValue)
-	this.axisProperties.xScale = this[allAxisFunctions[xType + graphClass]](this.canvasProperties.xValue) 
+	this.axisProperties.yScale = this[allAxisFunctions[yType + graphClass]](this.canvasProperties.yValue, "y")
+	this.axisProperties.xScale = this[allAxisFunctions[xType + graphClass]](this.canvasProperties.xValue, "x") 
 
 }
 
