@@ -24,13 +24,19 @@
 				} 
 			}
 
-
+			// read csv file function
 			d3.csv("irisData.csv", dataScrub ,function(data){
-				var newCanvas = canvas("canvas2", 750, 750);	
-				newCanvas.scatterPlot(data, "petalLength", "petalWidth");
+				//create canvas: canvas(canvas id, canvas width, canvas height)
+				var newCanvas = canvas("canvas2", 750, 750); 
+				//create scatterplot: scatterplot(data, x variable, y variable)
+				newCanvas.scatterPlot(data, "petalLength", "petalWidth"); 
+				//d3js ordinal scheme
 				colorPalette = d3.scaleOrdinal(d3.schemeCategory10);
+				//color scatterplot based on data variable: colorFeature(color by variable, color scheme)
 				newCanvas.colorFeature("class", colorPalette)
+				// update titles: updateDesc(x label, y label, title)
 				newCanvas.updateDesc("Petal Length", "Petal Width", "Petal Length VS. Petal Width")
+				// floating tooltip: createTips(data variable tooltip)
 				newCanvas.createTips("petalWidth")
 		})
 			

@@ -9,18 +9,23 @@
 	</head>
 	<body>
 		<script>
+			//Two exmaples 
+			//Example 1: (one useing an array of  objects as the data
 			dataArray = [
 				{ "x": 1, "y": 5 },
 				{ "x": 2, "y": 10 },
 				{ "x": 3, "y": 15 },
 				{ "x": 4, "y": 20 },
 				{ "x": 5, "y": 25 }
-			];
+				];
+			//create canvas: canvas(canvas id, width, height)
 			var newCanvas = canvas("canvas1", 750, 750);	
+			//create scatterplot: scatterPlot(data, x variable, y variable)
 			newCanvas.scatterPlot(dataArray, "x", "y");
 
+			//Example 2: data loading csv
 
-			//dataScrub is a case by case function
+			//dataScrub is a case by case functioni (function before loading data)
 			dataScrub = function(d, i){
 				//find a completely blank line, inorder to ignore
 				getArray = Object.keys(d).map(function (key) {return d[key] == undefined || d[key] == ""; });
@@ -34,11 +39,15 @@
 					}
 				} 
 			}
+			//load csv data
 			d3.csv("irisData.csv", dataScrub ,function(data){
 			var newCanvas = canvas("canvas2", 750, 750);	
 			newCanvas.scatterPlot(data, "petalLength", "petalWidth");
+
+			//color in scatterplot based on category variable
 			colorPalette = d3.scaleOrdinal(d3.schemeCategory10);
-			newCanvas.colorFeature(data, "class", colorPalette)
+			//colorFeature(color by variable, color scheme)
+			newCanvas.colorFeature("class", colorPalette)
 			})
 
 		</script>

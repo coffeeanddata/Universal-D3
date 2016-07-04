@@ -176,7 +176,7 @@ setCanvas.prototype.createTips = function( toolTipText){
 		.on("mouseout", function(d){
 			d3.select(this).attr("fill",originalColor) 
 		getDivToolTip = d3.select("div.divToolTip" + canvasID);
-		getDivToolTip.transition().duration(500).style("opacity", 0);
+		getDivToolTip.transition().duration(250).style("opacity", 0);
 		})
 }
 
@@ -202,6 +202,7 @@ setCanvas.prototype.barChart = function(data, xValue, yValue){
 		outline = this.outline,
 		CP = this.canvasProperties;	
 
+	var tForTransition = d3.transition().duration(500);
 
 	var typeofX = typeof(data[0][xValue]), typeofY = typeof(data[0][yValue]);
 	this.barChartLogistics(typeofX, typeofY)
@@ -214,10 +215,13 @@ setCanvas.prototype.barChart = function(data, xValue, yValue){
 	bars.enter()
 		.append(CP.mainElement)
 		.attr("class", CP.mainElementClass)
+		.attr("width",  0)
+		.attr("height", 0)
+		.attr("fill",   function(x) { return CP.colorScale(x[yValue]); })
 	.merge(bars)
+		.transition(tForTransition)
 		.attr("width",  this.canvasProperties.barChartLogistics.widthFunction)
 		.attr("height", this.canvasProperties.barChartLogistics.heightFunction)
-		.attr("fill",   function(x) { return CP.colorScale(x[yValue]); })
 		.attr("y",      function(x) { return yScale(x[yValue]); })			
 		.attr("x",    this.canvasProperties.barChartLogistics.xFunction) 
 	if(this.mainDesc == undefined){
@@ -284,7 +288,7 @@ setCanvas.prototype.charBarPlot = function(val, axisValue){
 
 	this.axisProperties[axisValue + "Outline"] = (axisValue == "y") ? [outline.height, 0] : [0, outline.width];
 	var valScale = d3.scaleLinear().range(this.axisProperties[axisValue + "Outline"]);
-	var valScale = d3.scaleBand().rangeRound(this.axisProperties[axisValue + "Outline"]).padding(0.1);
+	var valScale = d3.scaleBand().rangeRound(this.axisProperties[axisValue + "Outline"]).padding(0.15);
 
 	//map data values (x,y) to graph scale
 	valScale.domain(data.map(function(d) { return d[val]; }));
