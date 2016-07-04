@@ -132,9 +132,9 @@ setCanvas.prototype.updateDesc = function(xLabel, yLabel, mainTitle){
 
 
 
-setCanvas.prototype.colorFeature = function(data, variableKey, color){
-	var CP = this.canvasProperties;
-	var graph = this.plot.select("g.mainGraph");
+setCanvas.prototype.colorFeature = function(variableKey, color){
+	var CP = this.canvasProperties, data = CP.data,
+		graph = this.plot.select("g.mainGraph");
 
 	var selectValue = CP.mainElement + "." + CP.mainElementClass;
 	getScatter = graph.selectAll(selectValue).data(data);
@@ -144,11 +144,13 @@ setCanvas.prototype.colorFeature = function(data, variableKey, color){
 }
 
 
-setCanvas.prototype.createTips = function(data, toolTipText){
-	var	CP = this.canvasProperties;
-	var graph = this.plot.select("g.mainGraph")
-	var selectors = d3.selectAll(CP.mainElement);
-	var divToolTip = d3.select("body").append("div").attr("class","divToolTip")
+setCanvas.prototype.createTips = function( toolTipText){
+	var	CP = this.canvasProperties, graph = this.plot.select("g.mainGraph"),
+		data = data = CP.data,
+		selectors = d3.selectAll(CP.mainElement);
+	var divToolTip = d3.select("body").append("div").attr("class","divToolTip"+this.plotID);
+	divToolTip
+		.attr("storeText", toolTipText)
 		.style("position",  "absolute").style("width", "80px").style("height", "auto")
 		.style("padding", "4px").style("background-color", "white").style("-webkit-border-radius","10px")
         .style("-moz-border-radius", "10px").style("border-radius", "10px")
@@ -159,17 +161,21 @@ setCanvas.prototype.createTips = function(data, toolTipText){
 		// tool tip theme 
 		//http://chimera.labs.oreilly.com/books/1230000000345/ch10.html#_hover_to_highlight
 
+	selectCanvas = d3.select("div#"+this.plotID);
+	selectCanvas.on("mouseover", function(d) { canvasID = d3.select(this).attr("id"); })
 	selectors.on("mouseover", function (d) {
+		originalColor = d3.select(this).attr("fill")
 		d3.select(this).attr("fill", "lightsteelblue");
-		getDivToolTip = d3.select("div.divToolTip");
+		getDivToolTip = d3.select("div.divToolTip"+ canvasID);
+		var	toolTipText = getDivToolTip.attr("storeText");
 		getDivToolTip.transition().duration(250).text(toolTipText + ": " + d[toolTipText])
 			.style("left", (d3.event.pageX) + "px")		
 			.style("top", (d3.event.pageY - 30) + "px")
 			.style("opacity", 1);
 		})
 		.on("mouseout", function(d){
-			d3.select(this).attr("fill", CP.colorScale(d[CP.colorScaleValue]))
-		getDivToolTip = d3.select("div.divToolTip");
+			d3.select(this).attr("fill",originalColor) 
+		getDivToolTip = d3.select("div.divToolTip" + canvasID);
 		getDivToolTip.transition().duration(500).style("opacity", 0);
 		})
 }

@@ -29,9 +29,9 @@
 				var newCanvas = canvas("canvas2", 750, 750);	
 				newCanvas.scatterPlot(data, "petalLength", "petalWidth");
 				colorPalette = d3.scaleOrdinal(d3.schemeCategory10);
-				newCanvas.colorFeature(data, "class", colorPalette)
+				newCanvas.colorFeature("class", colorPalette)
 				newCanvas.updateDesc("Petal Length", "Petal Width", "Petal Length VS. Petal Width")
-				newCanvas.createTips(data,"petalWidth")
+				newCanvas.createTips("petalWidth")
 		})
 			
 		</script>

@@ -12,7 +12,7 @@
 			// data provided: https://www.kaggle.com/mylesoneill/world-university-rankings
 			//dataScrub is a case by case function
 			dataScrub = function(d, i){
-					if((d.year == "2015") & (+d.world_rank <= 25)){
+					if((d.year == "2015") & (+d.world_rank <= 30)){
 					d.world_rank           = d.world_rank
 					d.national_rank        = +d.national_rank
 					d.quality_of_education = +d.quality_of_education
@@ -24,20 +24,21 @@
 			}
 		
 			d3.csv("world-university-ranking/cwurData.csv", dataScrub ,function(data){
+				//canvas(id, width, height)
 				var barPlot = canvas("barPlot", 1000, 650);	
-				barPlot.barChart(data, "institution", "score");
-				barPlot.createTips(data, "score")
-				fillColor = function(d) { return "orange"; }
-				barPlot.colorFeature(data, "instiution", fillColor)
-				barPlot.updateDesc("", "Score", "Top 25 Institution Score")
+				barPlot.barChart(data, "institution", "score"); //barChart(data, x, y)
+				barPlot.createTips("score") //
+				fillColor = function(d) { return "steelblue"; }
+				barPlot.colorFeature("instiution", fillColor)
+				barPlot.updateDesc("", "Score", "Top 30 Institution Score")
 				barPlot.rotateText("x", -90, "end", -1, -.5)
-		
-				consol.log(data)
-				var horizontalBarPlot = canvas("barPlot", 1100, 650);	
-				horizontalBarPlot .barChart(data, "score", "institution");
-				horizontalBarPlot.createTips(data, "score")
-				horizontalBarPlot.colorFeature(data, "instiution", fillColor)
-				horizontalBarPlot.updateDesc("Score", "", "Top 25 Institution Score")
+				console.log(data)	
+				var horizontalBarPlot = canvas("HorizontalbarPlot", 1000, 750);	
+				horizontalBarPlot.barChart(data, "score", "institution");
+				horizontalBarPlot.createTips("country")
+				countryScale = d3.scaleOrdinal(d3.schemeCategory10);
+				horizontalBarPlot.colorFeature("country", countryScale)
+				horizontalBarPlot.updateDesc("Score", "", "Top 30 Institution Score")
 				
 			})
 		</script>
