@@ -20,12 +20,15 @@ setCanvas =  function(width, height){
 canvas = function(barId, width, height){
 	var setupCanvas = new setCanvas(width, height)
 	var outline = setupCanvas.outline;
-	var div = d3.select("body").append("div").attr("id", barId).attr("class","robustD3Canvas");
+	var div = d3.select("body")
+		.append("div")
+		.attr("id", barId)
+		.attr("class","robustD3Canvas")
 	var canvasSVG = div.append("svg")
 		.attr("width",  outline.width  + outline.leftMargin + outline.rightMargin)
 		.attr("height", outline.height + outline.topMargin + outline.bottomMargin)
 		.style("background-color", "#F8F8F9");
-	graph = canvasSVG.append("g")
+	canvasSVG.append("g")
 		.attr("class", "mainGraph")
 		.attr("transform", "translate(" + outline.leftMargin + "," +  outline.topMargin + ")");		
 	setupCanvas.plot = canvasSVG;
@@ -169,25 +172,26 @@ setCanvas.prototype.createTips = function( toolTipText){
 		// tool tip theme 
 		//http://chimera.labs.oreilly.com/books/1230000000345/ch10.html#_hover_to_highlight
 	}
-	getThis = d3.select("div#" + this.plotID);
+	var getThis = d3.select("div#" + this.plotID);
 	getThis.attr("tool_tip_text_place_holder", toolTipText)
 
 	getThis.on("mouseover", function(d){
 		var getTTT = d3.select(this).attr("tool_tip_text_place_holder")
-		selectors.on("mouseover", function (d) {
-		getOriObj.tipOnAction(d, this, getTTT)
-		
+		selectors.on("mouseover", function (d) { 
+			getOriObj.tipOnAction(d, this, getTTT);
+			selectors.on("mouseout", function(d){ getOriObj.tipOffAction(this) })
 		})
-	
-		.on("mouseout", function(d){
-			d3.select(this).attr("fill",d3.select(this).attr("store_original_color")) 
-		getDivToolTip = d3.select("div.divToolTip");
-		getDivToolTip.transition().duration(0).style("opacity", 0);
-		}
-	)
+
 	})
 	
 	
+}
+
+setCanvas.prototype.tipOffAction = function(getThis){
+	d3.select(getThis).attr("fill",d3.select(getThis).attr("store_original_color")) 
+	getDivToolTip = d3.select("div.divToolTip");
+	getDivToolTip.transition().duration(0).style("opacity", 0);
+
 }
 
 setCanvas.prototype.tipOnAction = function(d, getThis, TTT){
@@ -244,7 +248,7 @@ setCanvas.prototype.groupedBarPlotCheck = function(gValue, charValue, intValue){
 
 		CP.data.map(function(d) { 
 			d["gValueIndex"] = getKeys.indexOf(d[gValue] + "");
-			getCharValueObj = groupedByCharAxis[d[charValue]];
+			var	getCharValueObj = groupedByCharAxis[d[charValue]];
 			d["barStartValue"]  = getCharValueObj[d[gValue]];
 
 		})
@@ -351,7 +355,7 @@ setCanvas.prototype.barChartLogistics = function(typeofX, typeofY){
 
 
 setCanvas.prototype.rotateText = function(axis, rotate, anchor, moveUp, moveSide){
-	var graph = this.plot.select("g.mainGraph g.xAxis"),
+	var graph = this.plot.select("g.mainGraph"),
 		getAxisText = graph.selectAll("text");
 	getAxisText.attr("transform", "rotate(" + rotate + ")")	
 		.attr("dx", moveUp + "em")
@@ -374,6 +378,7 @@ setCanvas.prototype.setAxisFunctions = function(){
 
 setCanvas.prototype.charBarPlot = function(val, axisValue){
 	var	data     = this.canvasProperties.data,
+		graph = this.plot.select("g.mainGraph"),
 		outline  = this.outline;
 
 	this.axisProperties[axisValue + "Outline"] = (axisValue == "y") ? [outline.height, 0] : [0, outline.width];
@@ -432,7 +437,9 @@ setCanvas.prototype.numericBarPlot = function(val, axisValue){
 
 setCanvas.prototype.createAxis = function(xType, yType){
 	this.axisProperties = {}
-	var axisObject = this.axisProperties;
+	var axisObject = this.axisProperties,
+		graph = this.plot.select("g.mainGraph");
+
 //	this.axisProperties.NumericValue = (yType == "number") ? "height" : "width";
 	axisObject.xType = xType, axisObject.yType = yType;
 
@@ -505,7 +512,7 @@ setCanvas.prototype.barChartTransition = function(){
 		.style("position",  "relative")
 		.style("width", "200px")
 		.style("height", "auto")
-		.style("left", outline.width + outline.leftMargin - 20+ "px" )
+		.style("left", outline.width + outline.leftMargin - 40 + "px" )
 		.style("top", -(outline.height + outline.topMargin + outline.bottomMargin) + 20 + "px")
 
 	var newLabels = createForm.selectAll("label.barChartUdpate").data(labels);
