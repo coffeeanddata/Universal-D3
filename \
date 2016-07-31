@@ -36,10 +36,10 @@ canvas = function(barId, width, height){
 
 
 setCanvas.prototype.objectProperties = function(objectKeys, objectValues){
-	var getObject = this.canvasProperties;
+	getObject = this.canvasProperties;
 	objectKeys.forEach(function(key, index) {  
 		if(getObject[key] == undefined){
-			getObject[key] = objectValues[index]; 
+		getObject[key] = objectValues[index]; 
 		}
 	});
 }
@@ -49,20 +49,20 @@ setCanvas.prototype.objectProperties = function(objectKeys, objectValues){
 //scatterplot using bind, append, enter, update, and exit
 // only handles numeric vs numeric not really made to be used with categorical vs numeric plotting
 setCanvas.prototype.scatterPlot = function(data, xValue, yValue){
-	var objectKeys = ["data", "xValue", "yValue", "mainElement", "mainElementClass", "colorScaleValue", "colorScale"],
-		objectVals = [data, xValue, yValue, "circle", "scatterPlotCircles", yValue, function(d) { return "#000000";}] 
+	objectKeys = ["data", "xValue", "yValue", "mainElement", "mainElementClass", "colorScaleValue", "colorScale"]
+	objectVals = [data, xValue, yValue, "circle", "scatterPlotCircles", yValue, function(d) { return "#000000";}] 
 	this.objectProperties(objectKeys, objectVals)
 
 
-	var selectValue = this.mainElement + "." + this.mainElementClass,
-		graph = this.plot.select("g.mainGraph"),
-		outline = this.outline,
-		CP  = this.canvasProperties,
-		graphTrans = d3.transition().duration(1000);
-	this.createAxis("number", "number")
-	var yScale = this.axisProperties.yScale,
-		xScale = this.axisProperties.xScale;
+	var selectValue = this.mainElement + "." + this.mainElementClass;
+	var graph = this.plot.select("g.mainGraph");
+	var outline = this.outline;
+	var CP  = this.canvasProperties;	
 
+	graphTrans = d3.transition().duration(1000);
+	this.createAxis("number", "number")
+	yScale = this.axisProperties.yScale;
+	xScale = this.axisProperties.xScale;
 	// Bind Data
 	var scatter = graph.selectAll(selectValue).data(data);
 	//Enter
@@ -91,7 +91,7 @@ setCanvas.prototype.updateDesc = function(xLabel, yLabel, mainTitle){
 	this.plot.selectAll("text.DescText").remove();
 	var outline = this.outline;
 	if(this.mainDesc == undefined){
-		var tempObj = {
+		tempObj = {
 			"xLabel"    : { "xCord"    : (outline.leftMargin + outline.width/2),
 							"yCord"    : (outline.height + outline.topMargin + outline.bottomMargin/2),
 							"rotate"   : 0, 
@@ -113,13 +113,13 @@ setCanvas.prototype.updateDesc = function(xLabel, yLabel, mainTitle){
 		}	
 		this.mainDesc = tempObj
 	}else {	
-		var tempObj = this.mainDesc;
+		tempObj = this.mainDesc;
 		tempObj.xLabel.label = xLabel
 		tempObj.yLabel.label = yLabel
 		tempObj.mainTitle.label = mainTitle
 	}
-	var getArray = Object.keys(tempObj).map(function (key) {return tempObj[key]}),
-		newText = this.plot.selectAll("text.DescText").data(getArray);
+	getArray = Object.keys(tempObj).map(function (key) {return tempObj[key]});
+	newText = this.plot.selectAll("text.DescText").data(getArray);
 	newText.enter()
 		.append("text")
 		.attr("class", "DescText")
@@ -137,8 +137,8 @@ setCanvas.prototype.colorFeature = function(variableKey, color){
 	var CP = this.canvasProperties, data = CP.data,
 		graph = this.plot.select("g.mainGraph");
 
-	var selectValue = CP.mainElement + "." + CP.mainElementClass,
-		getScatter = graph.selectAll(selectValue).data(data);
+	var selectValue = CP.mainElement + "." + CP.mainElementClass;
+	getScatter = graph.selectAll(selectValue).data(data);
 	getScatter.attr("fill", function(d) { return color(d[variableKey]); });
 	CP.colorScale = color;
 	CP.colorScaleValue = variableKey;
@@ -148,15 +148,8 @@ setCanvas.prototype.colorFeature = function(variableKey, color){
 setCanvas.prototype.createTips = function( toolTipText){
 	var	CP = this.canvasProperties, graph = this.plot.select("g.mainGraph"),
 		data = data = CP.data,
-		getOriObj = this,
 		selectors = d3.selectAll(CP.mainElement);
-	CP.toolTipText = toolTipText
-
-	try{
-		var divToolTip = d3.select("div.divToolTip"),
-			getTextTempDivToolTip = divToolTip.text()
-	} catch(err) {
-	var divToolTip = d3.select("body").append("div").attr("class","divToolTip");
+	var divToolTip = d3.select("body").append("div").attr("class","divToolTip"+this.plotID);
 	divToolTip
 		.attr("storeText", toolTipText)
 		.style("position",  "absolute").style("width", "80px").style("height", "auto")
@@ -168,38 +161,24 @@ setCanvas.prototype.createTips = function( toolTipText){
         .style("pointer-events", "none").style("opacity", "0");
 		// tool tip theme 
 		//http://chimera.labs.oreilly.com/books/1230000000345/ch10.html#_hover_to_highlight
-	}
-	getThis = d3.select("div#" + this.plotID);
-	getThis.attr("tool_tip_text_place_holder", toolTipText)
 
-	getThis.on("mouseover", function(d){
-		var getTTT = d3.select(this).attr("tool_tip_text_place_holder")
-		selectors.on("mouseover", function (d) {
-		getOriObj.tipOnAction(d, this, getTTT)
-		
-		})
-	
-		.on("mouseout", function(d){
-			d3.select(this).attr("fill",d3.select(this).attr("store_original_color")) 
-		getDivToolTip = d3.select("div.divToolTip");
-		getDivToolTip.transition().duration(0).style("opacity", 0);
-		}
-	)
-	})
-	
-	
-}
-
-setCanvas.prototype.tipOnAction = function(d, getThis, TTT){
-		d3.select(getThis).attr("store_original_color", d3.select(getThis).attr("fill"))
-		var originalColor = d3.select(getThis).attr("fill")
-		d3.select(getThis).attr("fill", "lightsteelblue");
-		var getDivToolTip = d3.select("div.divToolTip" );
+	selectCanvas = d3.select("div#"+this.plotID);
+	selectCanvas.on("mouseover", function(d) { canvasID = d3.select(this).attr("id"); })
+	selectors.on("mouseover", function (d) {
+		originalColor = d3.select(this).attr("fill")
+		d3.select(this).attr("fill", "lightsteelblue");
+		getDivToolTip = d3.select("div.divToolTip"+ canvasID);
 		var	toolTipText = getDivToolTip.attr("storeText");
-		getDivToolTip.transition().duration(250).text(TTT + ": " + d[TTT])
+		getDivToolTip.transition().duration(250).text(toolTipText + ": " + d[toolTipText])
 			.style("left", (d3.event.pageX) + "px")		
 			.style("top", (d3.event.pageY - 30) + "px")
 			.style("opacity", 1);
+		})
+		.on("mouseout", function(d){
+			d3.select(this).attr("fill",originalColor) 
+		getDivToolTip = d3.select("div.divToolTip" + canvasID);
+		getDivToolTip.transition().duration(0).style("opacity", 0);
+		})
 }
 
 
@@ -221,18 +200,18 @@ setCanvas.prototype.groupedBarPlotCheck = function(gValue, charValue, intValue){
 	CP.mainElementClass = typeof(gValue) == "string" ? (CP.stacked == true ? "stackedBarPlot" : "groupedBarPlot") : CP.mainElementClass
 	
 	if(typeof(gValue) == "string"){
-		var getKeys = [],
-			groupedByCharAxis = {},
-			groupByGValue    =  d3.nest().key(function(k) { return k[gValue]; } ).entries(CP.data),
-			groupByCharValue =  d3.nest().key(function(k) { return k[charValue]; } ).entries(CP.data);
+		getKeys = [];
+		groupedByCharAxis = {}
+		groupByGValue    =  d3.nest().key(function(k) { return k[gValue]; } ).entries(CP.data);
+		groupByCharValue =  d3.nest().key(function(k) { return k[charValue]; } ).entries(CP.data);
 
 		groupByGValue.map(function(d){ 
 			getKeys.push(d["key"]);
 		})
 
 		groupByCharValue.map(function(d) { 
-			var mapObj =  {},
-				cumulativeSumArray = [];
+			mapObj =  {};
+			cumulativeSumArray = [];
 			d.values.map(function(g) {
 				//temporary Value that will be removed once cummulaitve sum workjed correctly
 				mapObj[g[gValue]] = d3.sum(cumulativeSumArray);
@@ -244,9 +223,8 @@ setCanvas.prototype.groupedBarPlotCheck = function(gValue, charValue, intValue){
 
 		CP.data.map(function(d) { 
 			d["gValueIndex"] = getKeys.indexOf(d[gValue] + "");
-			getCharValueObj = groupedByCharAxis[d[charValue]];
-			d["barStartValue"]  = getCharValueObj[d[gValue]];
-
+			var getCharValueObj = groupedByCharAxis[d[charValue]]
+			d["barStartValue"]  = getCharValueObj[d[gValue]]
 		})
 		this.canvasProperties.groupValueKeys = getKeys;
 	}
@@ -255,17 +233,18 @@ setCanvas.prototype.groupedBarPlotCheck = function(gValue, charValue, intValue){
 
 
 setCanvas.prototype.barPlot = function(data, xValue, yValue, gValue, stacked){
-	var objectKeys = ["data","yValue", "xValue", "gValue", "stacked", "mainElement", "mainElementClass", "colorScaleValue", "colorScale"],
-		objectVals = [data,   yValue,   xValue,   gValue,  stacked,   "rect", "barPlot", yValue, function(d) { return "#000000";}] 
+	objectKeys = ["data","yValue", "xValue", "gValue", "stacked", "mainElement", "mainElementClass", "colorScaleValue", "colorScale"]
+	objectVals = [data,   yValue,   xValue,   gValue,  stacked,   "rect", "barPlot", yValue, function(d) { return "#000000";}] 
 	this.objectProperties(objectKeys, objectVals)
+	
 
 	
 	this.canvasProperties.mainElementClass = typeof(gValue) == "string" ? "groupedBarPlot" : "barPlot";
 	var selectValue = this.mainElement + "." + this.mainElementClass,
 		graph = this.plot.select("g.mainGraph"),
 		outline = this.outline,
-		CP = this.canvasProperties,
-		tForTransition = d3.transition().duration(500);
+		CP = this.canvasProperties;	
+	var tForTransition = d3.transition().duration(500);
 
 	var typeofX = typeof(data[0][xValue]),
 		typeofY = typeof(data[0][yValue]),
@@ -273,10 +252,10 @@ setCanvas.prototype.barPlot = function(data, xValue, yValue, gValue, stacked){
 		numVal  = (typeofX == "number") ? xValue : yValue;
 
 	this.groupedBarPlotCheck(gValue, charVal, numVal)
-	this.createAxis(typeofX, typeofY);
-	var	yScale = this.axisProperties.yScale,
-		xScale = this.axisProperties.xScale;
 	this.barChartLogistics(typeofX, typeofY)
+	this.createAxis(typeofX, typeofY);
+	yScale = this.axisProperties.yScale;
+	xScale = this.axisProperties.xScale;
 
 
 	var	bars = graph.selectAll(selectValue).data(data);
@@ -300,49 +279,48 @@ setCanvas.prototype.barPlot = function(data, xValue, yValue, gValue, stacked){
 
 setCanvas.prototype.barChartLogistics = function(typeofX, typeofY){
 	this.canvasProperties.barChartLogistics = {}
-	var	BCLog = this.canvasProperties.barChartLogistics, outline = this.outline, CP = this.canvasProperties,
-		AP = this.axisProperties;
+	var	BCLog = this.canvasProperties.barChartLogistics, outline = this.outline, CP = this.canvasProperties
 
 	if(CP.mainElementClass == "barPlot") {
 		if(typeofY == "number"){
-			BCLog.heightFunction = function(x) { return outline.height - AP.yScale(x[CP.yValue]); } 
-			BCLog.widthFunction = function(x) { return AP.xScale.bandwidth(); } 
-			BCLog.yFunction = function(x) { return AP.yScale(x[CP.yValue])};  
-			BCLog.xFunction = function(x) {return   AP.xScale(x[CP.xValue]) } 
+			BCLog.heightFunction = function(x) { return outline.height - yScale(x[CP.yValue]); } 
+			BCLog.widthFunction = function(x) { return xScale.bandwidth(); } 
+			BCLog.yFunction = function(x) { return yScale(x[CP.yValue])};  
+			BCLog.xFunction = function(x) {return   xScale(x[CP.xValue]) } 
 		} else {	
-			BCLog.heightFunction = function(x) { return AP.yScale.bandwidth(); }
-			BCLog.widthFunction = function(x) {return   AP.xScale(x[CP.xValue]) } 
-			BCLog.yFunction = function(x) { return AP.yScale(x[CP.yValue])};  
+			BCLog.heightFunction = function(x) { return yScale.bandwidth(); }
+			BCLog.widthFunction = function(x) {return   xScale(x[CP.xValue]) } 
+			BCLog.yFunction = function(x) { return yScale(x[CP.yValue])};  
 			BCLog.xFunction = 0
 		}
 
 	}else if (CP.mainElementClass == "stackedBarPlot"){
 		if(typeofY == "number"){
 			BCLog.heightFunction = function(x) { 
-				if(x.barStartValue == 0){ return outline.height - AP.yScale(x[CP.yValue]) }
-				return AP.yScale(x.barStartValue) - AP.yScale(x[CP.yValue] + x.barStartValue)  
+				if(x.barStartValue == 0){ return outline.height - yScale(x[CP.yValue]) }
+				return yScale(x.barStartValue)- yScale(x[CP.yValue] + x.barStartValue)  
 			}
-			BCLog.widthFunction = function(x) { return AP.xScale.bandwidth(); } 
-			BCLog.yFunction = function(x) { return AP.yScale(x.barStartValue + x[CP.yValue]); };  
-			BCLog.xFunction = function(x) {return   AP.xScale(x[CP.xValue]) } 
+			BCLog.widthFunction = function(x) { return xScale.bandwidth(); } 
+			BCLog.yFunction = function(x) { return yScale(x.barStartValue + x[CP.yValue]); };  
+			BCLog.xFunction = function(x) {return   xScale(x[CP.xValue]) } 
 		} else {	
-			BCLog.heightFunction = function(x) { return AP.yScale.bandwidth(); }
-			BCLog.widthFunction = function(x) { return (x.barStartValue == 0) ?  AP.xScale(x[CP.xValue]) :
-				AP.xScale(x[CP.xValue] + x.barStartValue) - AP.xScale(x.barStartValue)  ; }
-			BCLog.yFunction = function(x) { return AP.yScale(x[CP.yValue])};  
-			BCLog.xFunction = function(x) { return (x.barStartValue == 0) ? 0 : AP.xScale(x.barStartValue); };
+			BCLog.heightFunction = function(x) { return yScale.bandwidth(); }
+			BCLog.widthFunction = function(x) { return (x.barStartValue == 0) ?  xScale(x[CP.xValue]) :
+				xScale(x[CP.xValue] + x.barStartValue) - xScale(x.barStartValue)  ; }
+			BCLog.yFunction = function(x) { return yScale(x[CP.yValue])};  
+			BCLog.xFunction = function(x) { return (x.barStartValue == 0) ? 0 : xScale(x.barStartValue); };
 		}
 
 	} else{
 		if(typeofY == "number"){
-			BCLog.heightFunction =  function(x) { return outline.height - AP.yScale(x[CP.yValue]); } 
-			BCLog.widthFunction = function(x) { return AP.xScale.bandwidth() / CP.groupValueKeys.length; } 
-			BCLog.yFunction =  function(x) { return AP.yScale(x[CP.yValue])}  
-			BCLog.xFunction =  function(x) { return AP.xScale(x[CP.xValue]) + (x['gValueIndex']) * (AP.xScale.bandwidth() / CP.groupValueKeys.length);  } 
+			BCLog.heightFunction =  function(x) { return outline.height - yScale(x[CP.yValue]); } 
+			BCLog.widthFunction = function(x) { return xScale.bandwidth() / CP.groupValueKeys.length; } 
+			BCLog.yFunction =  function(x) { return yScale(x[CP.yValue])}  
+			BCLog.xFunction =  function(x) { return xScale(x[CP.xValue]) + (x['gValueIndex']) * (xScale.bandwidth() / CP.groupValueKeys.length);  } 
 		} else {	
-			BCLog.heightFunction = function(x) { return AP.yScale.bandwidth() / CP.groupValueKeys.length; } 
-			BCLog.widthFunction = function(x) {return   AP.xScale(x[CP.xValue]) } 
-			BCLog.yFunction = function(x) { return AP.yScale(x[CP.yValue]) + (x['gValueIndex']) * (AP.yScale.bandwidth() / CP.groupValueKeys.length);  } 
+			BCLog.heightFunction = function(x) { return yScale.bandwidth() / CP.groupValueKeys.length; } 
+			BCLog.widthFunction = function(x) {return   xScale(x[CP.xValue]) } 
+			BCLog.yFunction = function(x) { return yScale(x[CP.yValue]) + (x['gValueIndex']) * (yScale.bandwidth() / CP.groupValueKeys.length);  } 
 			BCLog.xFunction = 0 
 		}
 	}
@@ -351,12 +329,12 @@ setCanvas.prototype.barChartLogistics = function(typeofX, typeofY){
 
 
 setCanvas.prototype.rotateText = function(axis, rotate, anchor, moveUp, moveSide){
-	var graph = this.plot.select("g.mainGraph g.xAxis"),
-		getAxisText = graph.selectAll("text");
+	var graph = this.plot.select("g.mainGraph g.xAxis");
+	var getAxisText = graph.selectAll("text");
 	getAxisText.attr("transform", "rotate(" + rotate + ")")	
-		.attr("dx", moveUp + "em")
-		.attr("dy", moveSide + "em")
-		.attr("text-anchor", anchor);
+	.attr("dx", moveUp + "em")
+    .attr("dy", moveSide + "em")
+	.attr("text-anchor", anchor);
 }
 
 
@@ -373,12 +351,12 @@ setCanvas.prototype.setAxisFunctions = function(){
 }
 
 setCanvas.prototype.charBarPlot = function(val, axisValue){
-	var	data     = this.canvasProperties.data,
-		outline  = this.outline;
+	var	data     = this.canvasProperties.data;
+	var outline  = this.outline;
 
 	this.axisProperties[axisValue + "Outline"] = (axisValue == "y") ? [outline.height, 0] : [0, outline.width];
-	var valScale = d3.scaleLinear().range(this.axisProperties[axisValue + "Outline"]),
-		valScale = d3.scaleBand().rangeRound(this.axisProperties[axisValue + "Outline"]).padding(0.15);
+	var valScale = d3.scaleLinear().range(this.axisProperties[axisValue + "Outline"]);
+	var valScale = d3.scaleBand().rangeRound(this.axisProperties[axisValue + "Outline"]).padding(0.15);
 
 	//map data values (x,y) to graph scale
 	valScale.domain(data.map(function(d) { return d[val]; }));
@@ -395,24 +373,19 @@ setCanvas.prototype.charBarPlot = function(val, axisValue){
 
 
 setCanvas.prototype.numericBarPlot = function(val, axisValue){
-	var	data    = this.canvasProperties.data,
-		graph = this.plot.select("g.mainGraph"),
-		outline = this.outline;
-
-	graph.selectAll("." + axisValue + "Axis").remove();
+	var	data    = this.canvasProperties.data;
+	var outline = this.outline;
 
 	if(this.canvasProperties.stacked){
-		var rangeVal=  d3.extent(data, function(x) { return x.barStartValue + x[val];})
-	}else{  
-		var rangeVal  = d3.extent(data, function(x) { return x[val]; });
-	
+		rangeVal=  d3.extent(data, function(x) { return x.barStartValue + x[val];})
+	} else{  
+		rangeVal  = d3.extent(data, function(x) { return x[val]; });
 	}
 	
 	this.axisProperties[axisValue + "Outline"] = (axisValue == "y") ? [outline.height, 0] : [0, outline.width];
-	
 	var valScale = d3.scaleLinear().range(this.axisProperties[axisValue + "Outline"]);
 
-	//map data values (x,y) to graph scale
+	3//map data values (x,y) to graph scale
 	valScale.domain([rangeVal[0]*.7, rangeVal[1] *1.1]);
 
 	// Create Axis group
@@ -448,57 +421,15 @@ setCanvas.prototype.createAxis = function(xType, yType){
 }
 
 
-setCanvas.prototype.barChartOnTransition = function(onClickText){
-	this.canvasProperties.stacked = (onClickText == "grouped") ? false : true;
-	var CP = this.canvasProperties, 
-		selectValue    = CP.mainElement + "." + CP.mainElementClass,
-		graph = this.plot.select("g.mainGraph"),
-		data = CP.data, typeofX = typeof(data[0][CP.xValue]), typeofY = typeof(data[0][CP.yValue]),
-		bars = graph.selectAll(selectValue).data(data);
-
-	CP.mainElementClass = onClickText + "BarPlot";
-	this.barChartLogistics(typeofX, typeofY)
-	if(this.axisProperties.yType == "number"){
-		var barChartNumberVal = "y",
-			numericColumn = this.canvasProperties.yValue;
-	}else {
-		var barChartNumberVal = "x",
-			numericColumn = this.canvasProperties.xValue;
-	}
-	this.axisProperties[barChartNumberVal + "Scale"] = this.numericBarPlot(numericColumn, barChartNumberVal)
-
-	var CP = this.canvasProperties,
-	yScale         = this.axisProperties.yScale,
-	xScale         = this.axisProperties.xScale,
-	tForTransition = d3.transition().duration(500).ease(d3.easeLinear),
-	outline        = this.outline;
-	
-
-	bars.enter()
-		.append(CP.mainElement)
-		.attr("class", CP.mainElementClass)
-	.merge(bars)
-		.transition(tForTransition)
-		.attr("class", CP.mainElementClass)
-		.transition(tForTransition)
-		.attr("width",  CP.barChartLogistics.widthFunction)
-		.attr("height", CP.barChartLogistics.heightFunction)
-		.attr("y",  	CP.barChartLogistics.yFunction)			
-		.attr("x",      CP.barChartLogistics.xFunction) 
-
-}
-
-	
-	
-			
- 
-
-
-
 setCanvas.prototype.barChartTransition = function(){
-	var labels         = ["stacked", "grouped"],
+	var selectValue    = this.mainElement + "." + this.mainElementClass,
+		tForTransition = d3.transition().duration(500),
+		CP             = this.canvasProperties,
+		graph          = this.plot.select("g.mainGraph"),
 		outline        = this.outline,
-		currentObj    = this;
+	//	yScale         = this.axisProperties.yScale,
+	//	xScale         = this.axisProperties.xScale;
+	    labels         = ["stacked", "grouped"];
 
 	createForm = d3.select("div#" + this.plotID)
 		.append("form")
@@ -507,20 +438,48 @@ setCanvas.prototype.barChartTransition = function(){
 		.style("height", "auto")
 		.style("left", outline.width + outline.leftMargin - 20+ "px" )
 		.style("top", -(outline.height + outline.topMargin + outline.bottomMargin) + 20 + "px")
+	newLabels = createForm.selectAll("label.barChartUdpate").data(labels);
 
-	var newLabels = createForm.selectAll("label.barChartUdpate").data(labels);
-	var	newButton = newLabels.enter()
+	newLabels.enter()
 		.append("button")
-		.attr("class", this.plotID + "_updateButton")
 	.merge(newLabels)
 		.attr("type", "button")
 		.attr("value", function(d) {return d; })
 		.text(function(d) {return d;})
+		.on("click", function(d){
+			CP.mainClassElement = d + "BarPlot"
+	/*		
 
+	var typeofX = typeof(data[0][xValue]),
+		typeofY = typeof(data[0][yValue]),
+		charVal = (typeofX == "string") ? xValue : yValue,
+		numVal  = (typeofX == "number") ? xValue : yValue;
 
-	newButton.on("click", function(d) { 
-			currentObj.barChartOnTransition(d)
+	this.groupedBarPlotCheck(gValue, charVal, numVal)
+	this.barChartLogistics(typeofX, typeofY)
+	this.createAxis(typeofX, typeofY);
+	*/
+
+	/*
+	var	bars = graph.selectAll(selectValue).data(data);
+	bars.enter()
+		.append(CP.mainElement)
+		.attr("class", CP.mainElementClass)
+		.attr("width",  0)
+		.attr("height", 0)
+		.attr("fill",   function(x) { return CP.colorScale(x[yValue]); })
+	.merge(bars)
+		.transition(tForTransition)
+		.attr("width",  CP.barChartLogistics.widthFunction)
+		.attr("height", CP.barChartLogistics.heightFunction)
+		.attr("y",  	CP.barChartLogistics.yFunction)			
+		.attr("x",      CP.barChartLogistics.xFunction) 
+			
+	*/		
 		})
+	
+	
+
 }
 
 
