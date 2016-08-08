@@ -26,7 +26,6 @@ canvas = function(barId, width, height, container){
 	var container = ( undefinedContainer || emptySelection ) ? "body" : container,
 		setupCanvas = new setCanvas(width, height),
 		outline = setupCanvas.outline;
-	console.log(container)
 
 
 	
@@ -527,6 +526,7 @@ setCanvas.prototype.barChartTransition = function(){
 		.style("height", "auto")
 		.style("left", outline.width + outline.leftMargin - 40 + "px" )
 		.style("top", -(outline.height + outline.topMargin + outline.bottomMargin) + 20 + "px")
+		.style("background-color", "transparent")
 
 	var newLabels = createForm.selectAll("label.barChartUdpate").data(labels);
 	var	newButton = newLabels.enter()
