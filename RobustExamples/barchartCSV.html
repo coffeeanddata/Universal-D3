@@ -41,7 +41,7 @@
 
 
 				//canvas(id, width, height)
-				var barPlot = canvas("barPlot", 800, 650);	
+				var barPlot = canvas("barPlot", 800, 650, "#test1234");	
 				barPlot.barPlot(USAdata, "institution", "score"); //barPlot(data, x, y)
 				barPlot.createTips("world_rank") //tooltip data variable
 				var fillColor = function(d) { return "#728c3f"; } //static color 
@@ -100,5 +100,6 @@
 				HbarChartUpdate.updateDesc("Number of Publications", "" ,"Number of Publication per University of California")
 			})
 		</script>
+		<div id="test"></div>
 	</body>
 </html>

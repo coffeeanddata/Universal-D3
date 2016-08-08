@@ -17,10 +17,20 @@ setCanvas =  function(width, height){
 
 
 //creating canvas using svg elements (uniqueId, outline from outlineParametes)
-canvas = function(barId, width, height){
-	var setupCanvas = new setCanvas(width, height)
-	var outline = setupCanvas.outline;
-	var div = d3.select("body")
+canvas = function(barId, width, height, container){
+	//testing to see where the canvas will be placed
+	var emptySelection = d3.select(container).empty(), 
+		undefinedContainer = container == undefined,
+		notBodySelection = container !== "body";
+
+	var container = ( undefinedContainer || emptySelection ) ? "body" : container,
+		setupCanvas = new setCanvas(width, height),
+		outline = setupCanvas.outline;
+	console.log(container)
+
+
+	
+	var div = d3.select(container)
 		.append("div")
 		.attr("id", barId)
 		.attr("class","robustD3Canvas")
@@ -34,6 +44,9 @@ canvas = function(barId, width, height){
 	setupCanvas.plot = canvasSVG;
 	setupCanvas.plotID = barId;
 	setupCanvas.canvasProperties  = {};
+
+	
+	if(emptySelection && notBodySelection && !undefinedContainer) { console.log("Container element " + container + " does not exist. Might cause issue. Canvas is currently nested in <body>") }
 	return setupCanvas;
 }
 
