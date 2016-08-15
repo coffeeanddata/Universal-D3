@@ -46,8 +46,8 @@
 
 			//color in scatterplot based on category variable
 			colorPalette = d3.scaleOrdinal(d3.schemeCategory10);
-			//colorFeature(color by variable, color scheme)
-			newCanvas.colorFeature("class", colorPalette)
+			//colorBy(color by variable, color scheme)
+			newCanvas.colorBy("class", colorPalette, true)
 			})
 
 		</script>

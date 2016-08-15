@@ -45,7 +45,7 @@
 				barPlot.barPlot(USAdata, "institution", "score"); //barPlot(data, x, y)
 				barPlot.createTips("world_rank") //tooltip data variable
 				var fillColor = function(d) { return "#728c3f"; } //static color 
-				barPlot.colorFeature("instiution", fillColor) // colorFeature( fill by variable, fill scale)
+				barPlot.colorBy("institution", fillColor) // colorBy( fill by variable, fill scale)
 				barPlot.updateDesc("", "Score", "Top 40 Internationally Ranked USA Institution") //updateDesc(x label, yLabel, TItle)
 				barPlot.rotateText("x", -90, "end", -1, -.5) //rotateText(axis to rate, by degrees, text append at, move text by , move text by)
 
@@ -58,14 +58,14 @@
 				//Either use built in d3.js color scale or use your own	
 				//var countryScale = d3.scaleOrdinal(d3.schemeCategory10);
 				var countryScale = d3.scaleOrdinal().range(["#1F77B4", "#D62728", "#9467BD", "#FF7F0E", "#2CA02C", "#8C564B", "#FF6666", "#F8CA40"]);
-				horizontalBarPlot.colorFeature("country", countryScale)
+				horizontalBarPlot.colorBy("country", countryScale, true)
 				horizontalBarPlot.updateDesc("Score", "", "Top 30 World Ranked Institution ")
 
 				// grouped bar plot
 				dataUC = data.filter(function(x) { return x.institution.indexOf("University of California") >= 0; }).slice(0, 30)
 				var canvasUC = canvas("groupBarPlot", 800, 650);	
 				canvasUC.barPlot(dataUC, "institution", "world_rank_rev", "year"); 
-				canvasUC.colorFeature("year", countryScale)
+				canvasUC.colorBy("year", countryScale, true)
 				canvasUC.createTips("year")
 				canvasUC.updateDesc("", "World Ranking", "University of California World Ranking (Higher is Better)")
 				canvasUC.rotateText("x", -90, "end", -1, -.5) //rotateText(axis to rate, by degrees, text append at, move text by , move text by)
@@ -74,7 +74,7 @@
 				// Horizontal Stacked Barplot
 				var canvasUC_H_stacked = canvas("HorizontalStackedBar",800 , 650);	
 				canvasUC_H_stacked.barPlot(dataUC, "world_rank_rev", "institution","year", true); 
-				canvasUC_H_stacked.colorFeature("year", countryScale)
+				canvasUC_H_stacked.colorBy("year", countryScale, true)
 				canvasUC_H_stacked.createTips("year")
 				canvasUC_H_stacked.updateDesc( "World Ranking","" ,"University of California World Ranking (Higher is Better)")
 				
@@ -83,7 +83,7 @@
 				var barChartUpdate = canvas("stackedandGrouped", 800, 650);	
 				barChartUpdate.barPlot(dataUC, "institution", "publications","year", true); 
 				barChartUpdate.barChartTransition()
-				barChartUpdate.colorFeature("year", countryScale)
+				barChartUpdate.colorBy("year", countryScale, true)
 				barChartUpdate.createTips("year")
 				barChartUpdate.updateDesc("", "Number of Publications" ,"Number of Publication per University of California")
 				barChartUpdate.rotateText("x", -90, "end", -1, -.5) //rotateText(axis to rate, by degrees, text append at, move text by , move text by)
@@ -95,7 +95,7 @@
 				var HbarChartUpdate = canvas("HorizontalstackedandGrouped", 800, 650);	
 				HbarChartUpdate.barPlot(dataUC, "publications", "institution", "year", true); 
 				HbarChartUpdate.barChartTransition()
-				HbarChartUpdate.colorFeature("year", countryScale)
+				HbarChartUpdate.colorBy("year", countryScale, true)
 				HbarChartUpdate.createTips("year")
 				HbarChartUpdate.updateDesc("Number of Publications", "" ,"Number of Publication per University of California")
 			})
