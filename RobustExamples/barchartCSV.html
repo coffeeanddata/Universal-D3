@@ -41,17 +41,20 @@
 
 
 				//canvas(id, width, height)
-				var barPlot = canvas("barPlot", 800, 650, "#test1234");	
+				var barPlot = canvas("barPlot", 800, 650 );	
+				barPlot.updateMargin("bottom", .3)
 				barPlot.barPlot(USAdata, "institution", "score"); //barPlot(data, x, y)
+
 				barPlot.createTips("world_rank") //tooltip data variable
 				var fillColor = function(d) { return "#728c3f"; } //static color 
 				barPlot.colorBy("institution", fillColor) // colorBy( fill by variable, fill scale)
 				barPlot.updateDesc("", "Score", "Top 40 Internationally Ranked USA Institution") //updateDesc(x label, yLabel, TItle)
-				barPlot.rotateText("x", -90, "end", -1, -.5) //rotateText(axis to rate, by degrees, text append at, move text by , move text by)
+				barPlot.rotateText("x", -90, "end", -.5, -1) //rotateText(axis to rate, by degrees, text append at, move text by , move text by)
 
 				// Horizontal bar plot
 				data2015 = data.filter(function(x) { return x.year == "2015"; }).slice(0, 30)
 				var horizontalBarPlot = canvas("HorizontalbarPlot", 800, 650);	
+				horizontalBarPlot.updateMargin("left", .3)
 				horizontalBarPlot.barPlot(data2015, "score", "institution");
 				horizontalBarPlot.createTips("country")
 
@@ -68,7 +71,7 @@
 				canvasUC.colorBy("year", countryScale, true)
 				canvasUC.createTips("year")
 				canvasUC.updateDesc("", "World Ranking", "University of California World Ranking (Higher is Better)")
-				canvasUC.rotateText("x", -90, "end", -1, -.5) //rotateText(axis to rate, by degrees, text append at, move text by , move text by)
+				canvasUC.rotateText("x", -90, "end", -.5, -1) //rotateText(axis to rate, by degrees, text append at, move text by , move text by)
 
 			
 				// Horizontal Stacked Barplot
@@ -86,7 +89,7 @@
 				barChartUpdate.colorBy("year", countryScale, true)
 				barChartUpdate.createTips("year")
 				barChartUpdate.updateDesc("", "Number of Publications" ,"Number of Publication per University of California")
-				barChartUpdate.rotateText("x", -90, "end", -1, -.5) //rotateText(axis to rate, by degrees, text append at, move text by , move text by)
+				barChartUpdate.rotateText("x", -90, "end", -.5, -1 ) //rotateText(axis to rate, by degrees, text append at, move text by , move text by)
 
 				getButton = document.getElementsByClassName("stackedandGrouped_updateButton")
 				getButton[1].click()

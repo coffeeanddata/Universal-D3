@@ -2,18 +2,26 @@
 //creating outline object
 // construction function 
 setCanvas =  function(width, height){
-	this.outline = {}
-	var outline = this.outline;
-	var chartMargin   = {top: height*.10, right: width*.15, bottom: height*.20, left: width*.15},
-		chartWidth  = width  - chartMargin.left - chartMargin.right,
-		chartHeight = height - chartMargin.top  - chartMargin.bottom;
-	outline.width = chartWidth;
-	outline.height = chartHeight 
-	outline.topMargin = chartMargin.top
-	outline.bottomMargin = chartMargin.bottom
-	outline.leftMargin =  chartMargin.left
-	outline.rightMargin =  chartMargin.right
+	this.outline = {};
+	var outline = this.outline,
+		chartMargin   = { 
+			top:    Math.floor(height*.10), 
+			right:  Math.floor(width*.15), 
+			bottom: Math.floor(height*.20), 
+			left:   Math.floor(width*.15) 
+		},
+		chartWidth    = width  - chartMargin.left - chartMargin.right,
+		chartHeight   = height - chartMargin.top  - chartMargin.bottom;
+	outline.width     = chartWidth;
+	outline.height    = chartHeight;
+	outline.topMargin = chartMargin.top;
+	outline.bottomMargin = chartMargin.bottom;
+	outline.leftMargin   =  chartMargin.left;
+	outline.rightMargin  =  chartMargin.right;
+	outline.totalWidth   =  width;
+	outline.totalHeight  = height;
 }
+
 
 
 //creating canvas using svg elements (uniqueId, outline from outlineParametes)
@@ -46,6 +54,22 @@ canvas = function(barId, width, height, container){
 	
 	if(emptySelection && notBodySelection && !undefinedContainer) { console.log("Container element " + container + " does not exist. Might cause issue. Canvas is currently nested in <body>") }
 	return setupCanvas;
+}
+
+
+setCanvas.prototype.updateMargin = function(margin, percent) {
+	var outline = this.outline, updateMargin = margin.toLowerCase() + "Margin";
+	var	getMargin = outline[updateMargin],
+		getTotal = (margin === "left" || margin === "right") ? outline.totalWidth : outline.totalHeight;
+	if(getMargin === undefined) {
+		console.log("Please choose between left, right, top or bottom")
+	} else {
+		outline[updateMargin]  = Math.floor(getTotal*percent);
+		var getCenter = (margin === "left" || margin === "right") ? "width" : "height";
+		outline[getCenter] = outline[getCenter] + getMargin - outline[updateMargin];
+		var getPlot = this.plot.select("g.mainGraph");
+		getPlot.attr("transform", "translate(" + outline.leftMargin + "," + outline.topMargin + ")");
+	}
 }
 
 
@@ -90,10 +114,7 @@ setCanvas.prototype.scatterPlot = function(data, xValue, yValue){
 		.attr("r", outline.width/ 120) 
 
 	//Exit
-	scatter.exit()
-		.transition().duration(1000)
-			.attr("r", 0)
-			.remove();
+	scatter.exit().remove();
 	if(this.mainDesc == undefined){
 		this.updateDesc(xValue.toUpperCase(), yValue.toUpperCase(), xValue.toUpperCase() + " vs. " + yValue.toUpperCase())
 	}
@@ -147,7 +168,7 @@ setCanvas.prototype.updateDesc = function(xLabel, yLabel, mainTitle){
 
 
 
-setCanvas.prototype.colorBy= function(variableKey, color, appendLegend){
+setCanvas.prototype.colorBy = function(variableKey, color, appendLegend){
 	var CP = this.canvasProperties, data = CP.data,
 		graph = this.plot.select("g.mainGraph");
 
@@ -167,14 +188,14 @@ setCanvas.prototype.colorBy= function(variableKey, color, appendLegend){
 }
 
 setCanvas.prototype.legend = function(colorScaleObj){		
-	var getPlot = this.plot, legendItem = "circle",
+	var getPlot = this.plot, getObj = this, legendItem = "circle",
 		emptySelection = getPlot.select("g.robustLegend").empty(),
 		outline = this.outline,
 		circleRadius = 6;
 	if(emptySelection === true){ 
-	getPlot.append("g")
-		.attr("class", "robustLegend")
-		.attr("transform", "translate(" + (outline.leftMargin + outline.width) + "," +  outline.topMargin + ")");		
+		getPlot.append("g")
+			.attr("class", "robustLegend")
+			.attr("transform", "translate(" + (outline.leftMargin + outline.width) + "," +  outline.topMargin + ")");		
 	}
 
 	var getLegend = getPlot.select("g.robustLegend"),
@@ -182,10 +203,10 @@ setCanvas.prototype.legend = function(colorScaleObj){
 		legendItems = getLegend.selectAll(legendItem + ".legendItem").data(getLegendArray),
 		legendText = getLegend.selectAll("text.legendItem").data(getLegendArray);
 	
-	
 	//Enter
-	legendItems.enter().append(legendItem)
-		.attr("class", "legendItem")
+	legendItems.enter()
+		.append(legendItem)
+		.attr("class", function(d ) { return "legendItem legend" + legendItem + " legendKey_" + d.keyValue; })
 	.merge(legendItems) //.transition(graphTrans)
 		.attr("fill", function(d) { return d.color; })
 		.attr("cx", function(x){ return outline.rightMargin/5; })
@@ -193,26 +214,32 @@ setCanvas.prototype.legend = function(colorScaleObj){
 		.attr("r", circleRadius) 
 	
 	//Exit
-	legendItems.exit()
-		.transition().duration(1000)
-			.attr("r", 0)
-			.remove();
-
+	legendItems.exit().remove();
 			
 	legendText.enter().append("text")
-		.attr("class", "legendItemsText")
+		.attr("class", function(d) { return "legendItem legendItemsText " + " legendKey_" + d.keyValue; })
 	.merge(legendText)
 		.text(function(d) {return d.keyValue; })
 		.attr("x", outline.rightMargin/5 + circleRadius + 5)
 		.attr("y", function(x,i) { return i*25 + circleRadius  - 3; })
 		.attr("font-size", "13")
 		.attr("text-anchor", "start")
+		.on("click", function(getText) { getObj.legendFilter(getText) })
 	
-	legendText.exit()
-		.transition().duration(1000)
-			.remove();
+	legendText.exit().remove();
 
 }
+
+setCanvas.prototype.legendFilter = function(selectedItem){
+	console.log(this.canvasProperties.data)
+
+
+
+
+
+}
+
+
 
 setCanvas.prototype.createTips = function( toolTipText){
 	var	CP = this.canvasProperties, graph = this.plot.select("g.mainGraph"),
@@ -324,6 +351,17 @@ setCanvas.prototype.groupedBarPlotCheck = function(gValue, charValue, intValue){
 }
 
 
+setCanvas.prototype.setBarPlot = function(){
+	var selectValue = this.mainElement + "." + this.mainElementClass,
+		graph = this.plot.select("g.mainGraph"),
+		outline = this.outline,
+		CP = this.canvasProperties,
+		tForTransition = d3.transition().duration(500);
+
+
+}
+
+
 setCanvas.prototype.barPlot = function(data, xValue, yValue, gValue, stacked){
 	var objectKeys = ["data","yValue", "xValue", "gValue", "stacked", "mainElement", "mainElementClass", "colorScaleValue", "colorScale"],
 		objectVals = [data,   yValue,   xValue,   gValue,  stacked,   "rect", "barPlot", yValue, function(d) { return "#000000";}] 
@@ -331,22 +369,23 @@ setCanvas.prototype.barPlot = function(data, xValue, yValue, gValue, stacked){
 
 	
 	this.canvasProperties.mainElementClass = typeof(gValue) == "string" ? "groupedBarPlot" : "barPlot";
+	
 	var selectValue = this.mainElement + "." + this.mainElementClass,
 		graph = this.plot.select("g.mainGraph"),
 		outline = this.outline,
 		CP = this.canvasProperties,
 		tForTransition = d3.transition().duration(500);
-
+	
 	var typeofX = typeof(data[0][xValue]),
 		typeofY = typeof(data[0][yValue]),
 		charVal = (typeofX == "string") ? xValue : yValue,
 		numVal  = (typeofX == "number") ? xValue : yValue;
-
+	
 	this.groupedBarPlotCheck(gValue, charVal, numVal)
 	this.createAxis(typeofX, typeofY);
+	this.barChartLogistics(typeofX, typeofY)
 	var	yScale = this.axisProperties.yScale,
 		xScale = this.axisProperties.xScale;
-	this.barChartLogistics(typeofX, typeofY)
 
 
 	var	bars = graph.selectAll(selectValue).data(data);
@@ -362,6 +401,7 @@ setCanvas.prototype.barPlot = function(data, xValue, yValue, gValue, stacked){
 		.attr("height", CP.barChartLogistics.heightFunction)
 		.attr("y",  	CP.barChartLogistics.yFunction)			
 		.attr("x",      CP.barChartLogistics.xFunction) 
+	bars.exit().remove();
 	if(this.mainDesc == undefined){
 		this.updateDesc(xValue.toUpperCase(), yValue.toUpperCase(), xValue.toUpperCase() + " vs. " + yValue.toUpperCase())
 	}
@@ -420,8 +460,8 @@ setCanvas.prototype.barChartLogistics = function(typeofX, typeofY){
 
 
 
-setCanvas.prototype.rotateText = function(axis, rotate, anchor, moveUp, moveSide){
-	var graph = this.plot.select("g.mainGraph"),
+setCanvas.prototype.rotateText = function(axis, rotate, anchor,  moveSide, moveUp){
+	var graph = this.plot.select("g." + axis + "Axis"),
 		getAxisText = graph.selectAll("text");
 	getAxisText.attr("transform", "rotate(" + rotate + ")")	
 		.attr("dx", moveUp + "em")
@@ -558,6 +598,8 @@ setCanvas.prototype.barChartOnTransition = function(onClickText){
 		.attr("height", CP.barChartLogistics.heightFunction)
 		.attr("y",  	CP.barChartLogistics.yFunction)			
 		.attr("x",      CP.barChartLogistics.xFunction) 
+	
+	bars.exit().remove();
 
 }
 
