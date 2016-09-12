@@ -11,7 +11,6 @@
 				float : left;
 				margin-left : 20px;
 				margin-top: 20px;
-				
 			}
 
 		</style>
@@ -21,8 +20,14 @@
 			// data provided: https://www.kaggle.com/mylesoneill/world-university-rankings
 			//dataScrub is a case by case function
 			dataScrub = function(d, i){
-					var rankFilter = 100;
-					if((+d.world_rank <= rankFilter)){
+				var rankFilter = 100,
+					keyWordArray = ["University of California", "University", "Swiss Federal Institute of Technology in Zurich", "Massachusetts Institute of Technology", "California Institute of Technology"],
+					replaceArray = ["UC", "Univ", "ETH Zurich", "MIT", "Cal Tech"];
+				d.institution_backup = d.institution;
+				for(i = 0; i < keyWordArray.length; i++){
+						d.institution = d.institution.replace(keyWordArray[i], replaceArray[i]);
+				}
+				if((+d.world_rank <= rankFilter)){
 					d.world_rank_rev       = rankFilter - +d.world_rank + 1
 					d.world_rank = +d.world_rank
 					d.national_rank        = +d.national_rank
@@ -51,6 +56,8 @@
 				barPlot.updateDesc("", "Score", "Top 40 Internationally Ranked USA Institution") //updateDesc(x label, yLabel, TItle)
 				barPlot.rotateText("x", -90, "end", -6, -10) //rotateText(axis to rate, by degrees, text append at, move text by , move text by)
 
+
+
 				// Horizontal bar plot
 				var data2015 = data.filter(function(x) { return x.year == "2015"; }).slice(0, 30)
 				var horizontalBarPlot = canvas("HorizontalbarPlot", 800, 650);	
@@ -65,7 +72,7 @@
 				horizontalBarPlot.updateDesc("Score", "", "Top 30 World Ranked Institution ")
 
 				// grouped bar plot
-				var dataUC = data.filter(function(x) { return x.institution.indexOf("University of California") >= 0; }).slice(0, 30)
+				var dataUC = data.filter(function(x) { return x.institution.indexOf("UC") >= 0; }).slice(0, 30)
 				var canvasUC = canvas("groupBarPlot", 800, 650);	
 				canvasUC.barPlot(dataUC, "institution", "world_rank_rev", "year"); 
 				canvasUC.colorBy("year", countryScale, true)
@@ -73,6 +80,23 @@
 				canvasUC.updateDesc("", "World Ranking", "University of California World Ranking (Higher is Better)")
 				canvasUC.rotateText("x", -90, "end", -6, -10) //rotateText(axis to rate, by degrees, text append at, move text by , move text by)
 
+
+
+				var changingPlot = canvas("BarToScatter", 800, 650);	
+				changingPlot.barPlot(dataUC, "institution", "world_rank_rev", "year", true); 
+				changingPlot.colorBy("year", countryScale, true)
+				changingPlot.createTips("year")
+				changingPlot.updateDesc("", "World Ranking", "University of California World Ranking (Higher is Better)")
+				changingPlot.rotateText("x", -90, "end", -6, -10) //rotateText(axis to rate, by degrees, text append at, move text by , move text by)
+
+				setTimeout(function(){
+					changingPlot.barPlot(dataUC, "institution", "world_rank_rev", "year");
+				} , 2500); 
+					setTimeout(function(){ 
+					changingPlot.scatterPlot(dataUC, "alumni_employment", "world_rank");
+					changingPlot.colorBy("institution", countryScale, true)
+					changingPlot.createTips("year")
+				}, 3500)
 			
 				// Horizontal Stacked Barplot
 				var canvasUC_H_stacked = canvas("HorizontalStackedBar",800 , 650);	
@@ -92,17 +116,23 @@
 				barChartUpdate.updateDesc("", "Number of Publications" ,"Number of Publication per University of California")
 				barChartUpdate.rotateText("x", -90, "end", -6, -10) //rotateText(axis to rate, by degrees, text append at, move text by , move text by)
 
+				
+				/*
 				var getButton = document.getElementsByClassName("stackedandGrouped_updateButton")
 				getButton[1].click()
-
+				*/
 				var HbarChartUpdate = canvas("HorizontalstackedandGrouped", 800, 650);	
 				HbarChartUpdate.barPlot(dataUC, "publications", "institution", "year", true); 
 				HbarChartUpdate.barChartTransition()
 				HbarChartUpdate.colorBy("year", countryScale, true)
 				HbarChartUpdate.createTips("year")
 				HbarChartUpdate.updateDesc("Number of Publications", "" ,"Number of Publication per University of California")
+
+
+				
+				
+
 			})
 		</script>
-		<div id="test"></div>
 	</body>
 </html>

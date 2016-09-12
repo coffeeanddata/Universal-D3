@@ -76,30 +76,22 @@ setCanvas.prototype.updateMargin = function(margin, percent) {
 setCanvas.prototype.objectProperties = function(objectKeys, objectValues){
 	var getObject = this.canvasProperties;
 	objectKeys.forEach(function(key, index) {  
-		if(getObject[key] == undefined){
-			getObject[key] = objectValues[index]; 
-		}
+		getObject[key] = objectValues[index]; 
 	});
 }
-
-
-
-//scatterplot using bind, append, enter, update, and exit
-// only handles numeric vs numeric not really made to be used with categorical vs numeric plotting
-setCanvas.prototype.scatterPlot = function(data, xValue, yValue){
-	var objectKeys = ["data", "xValue", "yValue", "mainElement", "mainElementClass", "colorScaleValue", "colorScale"],
-		objectVals = [data, xValue, yValue, "circle", "scatterPlotCircles", yValue, function(d) { return "#000000";}] 
-	this.objectProperties(objectKeys, objectVals)
-
-
-	var selectValue = this.mainElement + "." + this.mainElementClass,
+setCanvas.prototype.setupScatterPlot = function(data, xValue, yValue, forceSelect){
+	var CP = this.canvasProperties,
+		selectValue = forceSelect || CP.mainElement + "." + CP.mainElementClass,
 		graph = this.plot.select("g.mainGraph"),
-		outline = this.outline,
-		CP  = this.canvasProperties,
-		graphTrans = d3.transition().duration(1000);
-	this.createAxis("number", "number")
-	var yScale = this.axisProperties.yScale,
-		xScale = this.axisProperties.xScale;
+		outline = this.outline;
+	
+	graph.attr("main_viz_element", CP.mainElement);
+
+		if(this.D3Properties === undefined){
+			this.D3Properties = {};
+			var newPlot = true;
+		}
+	if(selectValue.split(".")[0] != CP.mainElement) graph.selectAll(selectValue).remove();
 
 	// Bind Data
 	var scatter = graph.selectAll(selectValue).data(data);
@@ -107,21 +99,64 @@ setCanvas.prototype.scatterPlot = function(data, xValue, yValue){
 	scatter.enter().append(CP.mainElement)
 		.attr("class", CP.mainElementClass)
 		.attr("r", 0)
+		.attr("fill",   function(x) { return CP.colorScale(x[CP.colorScaleValue]); })
 	.merge(scatter)
-		.transition(graphTrans)
-		.attr("cx", function(x) { return xScale(x[xValue]); })
-		.attr("cy", function(x) { return yScale(x[yValue]); })
-		.attr("r", outline.width/ 120) 
+		.transition().duration(1000).delay(function(d, i){ return(newPlot) ? i * 5 : 0;})
+		.attr("class", CP.mainElementClass)
+		.attr("cx", function(d){ if(d.filterOutData){ return 0;}; return CP.scatterLogistics.cx(d); })
+		.attr("cy", function(d){ if(d.filterOutData){ return 0;}; return CP.scatterLogistics.cy(d); })
+		.attr("r",  function(d){ if(d.filterOutData){ return 0;}; return outline.width/ 90; }) 
 
 	//Exit
 	scatter.exit().remove();
+
+}
+
+
+//scatterplot using bind, append, enter, update, and exit
+// only handles numeric vs numeric not really made to be used with categorical vs numeric plotting
+setCanvas.prototype.scatterPlot = function(data, xValue, yValue, forceSelect){
+	if(this.axisProperties === undefined){
+		var clonedData= newClone(data);
+		var objectKeys = ["data", "xValue", "yValue", "plotType", "mainElement", "mainElementClass", "colorScaleValue", "colorScale"],
+			objectVals = [clonedData, xValue, yValue, "ScatterPlot", "circle", "scatterPlotCircles", yValue, function(d) { return "#000000";}] 
+		this.objectProperties(objectKeys, objectVals)
+		this.setAxisType(clonedData, xValue, yValue);
+	}else{
+		var currentSelection = forceSelect || this.canvasProperties.mainElement + "." + this.canvasProperties.mainElementClass,
+			objectKeys = ["yValue", "xValue", "plotType",    "mainElement", "mainElementClass", "forceSelect"],
+			objectVals = [yValue,   xValue,   "ScatterPlot", "circle", 		"scatterPlotCircles", currentSelection];
+		this.objectProperties(objectKeys, objectVals)
+		this.setAxisType(this.canvasProperties.data, xValue, yValue);
+	}
+	var CP = this.canvasProperties, AP = this.axisProperties;
+	this.createAxis("number", "number")
+	this.scatterLogistics(AP.xType, AP.yType)
+
+	//if(this.plotID === "groupBarPlot2") debugger;
+	this.setupScatterPlot(CP.data, xValue, yValue, CP.forceSelect)
 	if(this.mainDesc === undefined){
 		this.updateDesc(xValue.toUpperCase(), yValue.toUpperCase(), xValue.toUpperCase() + " vs. " + yValue.toUpperCase())
-	}else {
-		var getMainDesc = this.mainDesc;
-		this.updateDesc(getMainDesc.xLabel.label, getMainDesc.ylabel.label, getMainDesc.mainTitle.label)
-	}
 }
+}
+
+
+
+
+setCanvas.prototype.scatterLogistics= function(typeofX, typeofY){
+	this.canvasProperties.scatterLogistics = {}
+	var	SLog = this.canvasProperties.scatterLogistics,
+		outline = this.outline,
+		CP = this.canvasProperties,
+		AP = this.axisProperties;
+
+	SLog.cx = function(x) { return AP.xScale(x[CP.xValue]); }
+	SLog.cy = function(x) { return AP.yScale(x[CP.yValue]); }
+
+}
+
+
+
 
 
 
@@ -200,7 +235,7 @@ setCanvas.prototype.colorBy = function(variableKey, color, appendLegend){
 	});
 	CP.colorScale = color;
 	CP.colorScaleValue = variableKey;
-	if(appendLegend){ this.legend(storeColorScale); }
+	if(appendLegend) this.legend(storeColorScale); 
 }
 
 setCanvas.prototype.legend = function(colorScaleObj){		
@@ -223,16 +258,17 @@ setCanvas.prototype.legend = function(colorScaleObj){
 		legendText = getLegend.selectAll("text.legendItem").data(getLegendArray);
 	
 	//Enter
-	legendItems.enter()
-		.append(legendItem)
-		.attr("class", function(d){ return "legendItem legend" + legendItem + " legendKey_" + d.keyValue.replace(" ", "_"); })
+	legendItems.enter().append(legendItem)
 	.merge(legendItems) 
+		.attr("class", function(d){
+			 return "legendItem legend" + legendItem + " legendKey_" + d.keyValue.replace(/ /g, "_").replace(/[|&;$%@"<>()+,]/g, ""); 
+		})
 		.attr("fill", function(d){    return d.color; })
 		.attr("cx",   function(x){    return outline.rightMargin/5; })
 		.attr("cy",   function(x, i){ return i*25; })
 		.attr("r", circleRadius) 
 		.on("click", function(getText){ 
-			var getKeyClass = ".legendKey_" + getText.keyValue.replace(" ", "_"),
+			var getKeyClass = ".legendKey_" + getText.keyValue.replace(/ /g, "_").replace(/[|&;$%@"<>()+,]/g, ""),
 				getCircle = getLegend.select("circle" + getKeyClass);
 				getObj.legendFilter(getText, getCircle) 
 			
@@ -242,15 +278,17 @@ setCanvas.prototype.legend = function(colorScaleObj){
 	legendItems.exit().remove();
 			
 	legendText.enter().append("text")
-		.attr("class", function(d) { return "legendItem legendItemsText " + " legendKey_" + d.keyValue.replace(" ", "_"); })
 	.merge(legendText)
+		.attr("class", function(d) {
+			 return "legendItem legendItemsText " + " legendKey_" + d.keyValue.replace(/ /g, "_").replace(/[|&;$%@"<>()+,]/g, "");
+		; })
 		.text(function(d){ return d.keyValue; })
 		.attr("x", outline.rightMargin/5 + circleRadius + 5)
 		.attr("y", function(x,i) { return i*25 + circleRadius  - 3; })
 		.attr("font-size", "13")
 		.attr("text-anchor", "start")
 		.on("click", function(getText) { 
-			var getKeyClass = ".legendKey_" + getText.keyValue.replace(" ", "_"),
+			var getKeyClass = ".legendKey_" + getText.keyValue.replace(/ /g, "_").replace(/[|&;$%@"<>()+,]/g, ""),
 				getCircle = getLegend.select("circle" + getKeyClass);
 			getObj.legendFilter(getText, getCircle) 
 		});
@@ -261,13 +299,14 @@ setCanvas.prototype.legend = function(colorScaleObj){
 
 setCanvas.prototype.legendFilter = function(selectedItem, getShape){
 	var LP   = this.legendProperties, 
+		CP   = this.canvasProperties,
 		AP   = this.axisProperties,
-		xVal = this.canvasProperties.xValue,
-		yVal = this.canvasProperties.yValue,
-		gVal = this.canvasProperties.gValue,
-		stackedVal = this.canvasProperties.stacked;
+		xVal = CP.xValue,
+		yVal = CP.yValue,
+		gVal = CP.gValue,
+		stackedVal = CP.stacked;
 
-	this.canvasProperties.data.forEach(function(dataValue, indexVal, dataArray){
+	CP.data.forEach(function(dataValue, indexVal, dataArray){
 		if(dataValue[LP.mainKey] + "" ===  selectedItem.keyValue){
 			dataArray[indexVal].filterOutData = (dataArray[indexVal].filterOutData) ? false : true;
 			if(dataArray[indexVal].filterOutData){
@@ -283,7 +322,8 @@ setCanvas.prototype.legendFilter = function(selectedItem, getShape){
 			}
 		}
 	})
-	this.barPlot(this.canvasProperties.data, xVal, yVal, gVal, stackedVal)
+	if(CP.plotType === "barPlot") this.barPlot(CP.data, xVal, yVal, gVal, stackedVal);
+	else this.scatterPlot(CP.data, xVal, yVal);
 }
 
 
@@ -291,8 +331,7 @@ setCanvas.prototype.legendFilter = function(selectedItem, getShape){
 setCanvas.prototype.createTips = function(toolTipText){
 	var	CP = this.canvasProperties, graph = this.plot.select("g.mainGraph"),
 		data = data = CP.data,
-		getOriObj = this,
-		selectors = d3.selectAll(CP.mainElement);
+		getOriObj = this;
 	CP.toolTipText = toolTipText
 
 	try{
@@ -316,7 +355,9 @@ setCanvas.prototype.createTips = function(toolTipText){
 	getThis.attr("tool_tip_text_place_holder", toolTipText)
 
 	getThis.on("mouseover", function(d){
-		var getTTT = d3.select(this).attr("tool_tip_text_place_holder")
+		var getTTT = d3.select(this).attr("tool_tip_text_place_holder"),
+			getMainElements = d3.select(this).select("g.mainGraph").attr("main_viz_element"),
+			selectors  = d3.select(this).select("g.mainGraph").selectAll(getMainElements);
 		selectors.on("mouseover", function (d) { 
 			getOriObj.tipOnAction(d, this, getTTT);
 			selectors.on("mouseout", function(d){ getOriObj.tipOffAction(this) })
@@ -336,7 +377,7 @@ setCanvas.prototype.tipOnAction = function(d, getThis, TTT){
 		d3.select(getThis).attr("fill", "lightsteelblue");
 		var getDivToolTip = d3.select("div.divToolTip" );
 		var	toolTipText = getDivToolTip.attr("storeText");
-		getDivToolTip.transition().duration(250).text(TTT + ": " + d[TTT])
+		getDivToolTip.transition().duration(150).text(TTT + ": " + d[TTT])
 			.style("left", (d3.event.pageX) + "px")		
 			.style("top", (d3.event.pageY - 30) + "px")
 			.style("opacity", 1);
@@ -389,24 +430,32 @@ setCanvas.prototype.groupedBarPlotCheck = function(gValue, charValue, intValue){
 }
 
 
-setCanvas.prototype.setupBarPlot = function(data, xValue, yValue, gValue, stacked){
-	var CP = this.canvasProperties,
-		selectValue = CP.mainElement + "." + CP.mainElementClass,
-		graph = this.plot.select("g.mainGraph"),
-		outline = this.outline,
-		tForTransition = d3.transition().duration(500),
-		yScale = this.axisProperties.yScale,
-		xScale = this.axisProperties.xScale;
 
+setCanvas.prototype.setupBarPlot = function(data, xValue, yValue, gValue, stacked, forceSelect){
+	var CP = this.canvasProperties,
+		AP = this.axisProperties,
+		selectValue = forceSelect || CP.mainElement + "." + CP.mainElementClass,
+		graph = this.plot.select("g.mainGraph"),
+		outline = this.outline;
+
+	graph.attr("main_viz_element", CP.mainElement);
+
+	if(this.D3Properties === undefined){
+		this.D3Properties = {};
+		var newPlot = true;
+	}
 	var	bars = graph.selectAll(selectValue).data(data);
 	bars.enter()
 		.append(CP.mainElement)
 		.attr("class", CP.mainElementClass)
-		.attr("width",  0)
-		.attr("height", 0)
+		.attr("width",  function(d){ if(d.filterOutData || AP.yType === "string"){ return 0;}; return CP.barChartLogistics.widthFunction(d);})
+		.attr("height", function(d){ if(d.filterOutData || AP.xType === "string"){ return 0;}; return CP.barChartLogistics.heightFunction(d);})
+		.attr("y", function(d){ return (AP.yType === "string") ? CP.barChartLogistics.yFunction(d) : outline.height; } ) 
+		.attr("x", function(d){ return (AP.xType === "string") ? CP.barChartLogistics.xFunction(d) : 0;} ) 
 		.attr("fill",   function(x) { return CP.colorScale(x[CP.colorScaleValue]); })
 	.merge(bars)
-		.transition(tForTransition)
+		.transition().duration(1000).delay(function(d, i){ return(newPlot) ? i * 50 : 0;})
+		.attr("class", CP.mainElementClass)
 		.attr("width",  function(d){ if(d.filterOutData){ return 0;}; return CP.barChartLogistics.widthFunction(d);})
 		.attr("height", function(d){ if(d.filterOutData){ return 0;}; return CP.barChartLogistics.heightFunction(d);})
 		.attr("y",  	function(d){ if(d.filterOutData){ return 0;}; return CP.barChartLogistics.yFunction(d);})			
@@ -416,14 +465,21 @@ setCanvas.prototype.setupBarPlot = function(data, xValue, yValue, gValue, stacke
 }
 
 
-setCanvas.prototype.barPlot = function(data, xValue, yValue, gValue, stacked){
-	if(this.axisProperties === undefined) {
-		var newData = newClone(data);
+setCanvas.prototype.barPlot = function(data, xValue, yValue, gValue, stacked, forceSelect){
+	if(this.axisProperties === undefined){
+		var clonedData = newClone(data);
 		var objectKeys = ["data","yValue", "xValue", "gValue", "stacked", "plotType", "mainElement", "mainElementClass", "colorScaleValue", "colorScale"],
-		objectVals = [newData,   yValue,   xValue,   gValue,  stacked,   "barPlot",  "rect", "barPlot", yValue, function(d) { return "#000000";}] 
+		objectVals = [clonedData,   yValue,   xValue,   gValue,  stacked,   "barPlot",  "rect", "barPlot", yValue, function(d) { return "#000000";}] 
 		this.objectProperties(objectKeys, objectVals)
 		this.canvasProperties.mainElementClass = typeof(gValue) == "string" ? "groupedBarPlot" : "barPlot";
-		this.setAxisType(newData, xValue, yValue);
+		this.setAxisType(clonedData, xValue, yValue);
+	}else{
+		var currentSelection = forceSelect || this.canvasProperties.mainElement + "." + this.canvasProperties.mainElementClass,
+			objectKeys = ["yValue", "xValue", "gValue", "stacked", "plotType", "mainElement", "mainElementClass", "forceSelect"],
+			objectVals = [yValue,   xValue,   gValue,   stacked,  "barPlot",  "rect", "barPlot", currentSelection];
+		this.objectProperties(objectKeys, objectVals)
+		this.canvasProperties.mainElementClass = typeof(gValue) == "string" ? "groupedBarPlot" : "barPlot";
+		this.setAxisType(this.canvasProperties.data, xValue, yValue);
 	}
 	var CP = this.canvasProperties, AP = this.axisProperties;
 	
@@ -432,19 +488,35 @@ setCanvas.prototype.barPlot = function(data, xValue, yValue, gValue, stacked){
 	this.createAxis(AP.xType, AP.yType);
 	this.barChartLogistics(AP.xType, AP.yType)
 
-   this.setupBarPlot(CP.data, xValue, yValue, gValue, stacked);
+   this.setupBarPlot(CP.data, xValue, yValue, gValue, stacked, CP.forceSelect);
 	if(this.mainDesc == undefined){
 		this.updateDesc(xValue.toUpperCase(), yValue.toUpperCase(), xValue.toUpperCase() + " vs. " + yValue.toUpperCase())
 	}
 }
 
 
+
 setCanvas.prototype.setAxisType = function(data, xVal, yVal){
-	this.axisProperties = {};
-	this.axisAnchor = {};
-	var AP = this.axisProperties;
+	this.axisProperties = this.axisProperties || {};
+	this.axisAnchor = this.axisAnchor || {};
+	var AP = this.axisProperties;	
+
+	var tempXValObj = {};
+		tempYValObj = {};
+
+	data.forEach(function(d){
+		tempXValObj[typeof(d[xVal])] = true;
+		tempYValObj[typeof(d[yVal])] = true;
+	});
+
+	AP.xType = (tempXValObj.string) ? "string" : "number";
+	AP.yType = (tempYValObj.string) ? "string" : "number";
+
+
+	/*
 	AP.xType = typeof(data[0][xVal])
 	AP.yType = typeof(data[0][yVal]),
+	*/
 	AP.charAxis = (AP.xType === "string") ? xVal : yVal,
 	AP.numAxis =  (AP.yType === "string") ? xVal : yVal;
 
@@ -515,19 +587,18 @@ setCanvas.prototype.rotateText = function(axis, rotate, anchor,  moveSide, moveU
 		.attr("dx", moveUp + "px")
 		.attr("dy", moveSide + "px")
 		.attr("text-anchor", anchor);
-
 }
 
 
 setCanvas.prototype.setAxisFunctions = function(){
 	return {
-		numberscatterPlotCircles : "numericBarPlot",
-		numberstackedBarPlot     : "numericBarPlot",
- 		stringstackedBarPlot     : "charBarPlot",
-		numberbarPlot            : "numericBarPlot",
-		stringbarPlot            : "charBarPlot",
-		stringgroupedBarPlot     : "charBarPlot",
-		numbergroupedBarPlot     : "numericBarPlot"
+		numberScatterPlot    : "numericBarPlot",
+		numberstackedBarPlot : "numericBarPlot",
+ 		stringstackedBarPlot : "charBarPlot",
+		numberbarPlot        : "numericBarPlot",
+		stringbarPlot        : "charBarPlot",
+		stringgroupedBarPlot : "charBarPlot",
+		numbergroupedBarPlot : "numericBarPlot"
 	}
 }
 
@@ -557,7 +628,6 @@ setCanvas.prototype.charBarPlot = function(val, axisValue){
 
 
 	if(AA[axisValue + "Axis"] === undefined){
-
 		this.axisAnchor[axisValue + "Axis"] = {
 			"rotate" : 0,
 			"anchor" : "end",
@@ -572,7 +642,7 @@ setCanvas.prototype.charBarPlot = function(val, axisValue){
 	return valScale;
 }
 
-
+// 
 setCanvas.prototype.numericBarPlot = function(val, axisValue){
 	var	data    = this.canvasProperties.data,
 		graph = this.plot.select("g.mainGraph"),
@@ -617,10 +687,11 @@ setCanvas.prototype.createAxis = function(xType, yType){
 //	axisObject.xType = xType, axisObject.yType = yType;
 
 	allAxisFunctions = this.setAxisFunctions()
-	var graphClass =	this.canvasProperties.mainElementClass;
+	var graphClass =	this.canvasProperties.plotType;
 
 
 	graph.selectAll(".axis").remove();
+	//if(this.plotID === "groupBarPlot2") debugger;
 	this.axisProperties.yScale = this[allAxisFunctions[yType + graphClass]](this.canvasProperties.yValue, "y")
 	this.axisProperties.xScale = this[allAxisFunctions[xType + graphClass]](this.canvasProperties.xValue, "x") 
 
@@ -629,39 +700,10 @@ setCanvas.prototype.createAxis = function(xType, yType){
 
 setCanvas.prototype.barChartOnTransition = function(onClickText){
 	this.canvasProperties.stacked = (onClickText === "grouped") ? false : true;
-
 	var CP = this.canvasProperties, 
-		AP = this.axisProperties,
-		selectValue = CP.mainElement + "." + CP.mainElementClass;
-		
+		currentSelection = CP.mainElement + "." + CP.mainElementClass;
 	CP.mainElementClass = onClickText + "BarPlot";
-	
-	this.groupedBarPlotCheck(CP.gValue, AP.charAxis, AP.numAxis)
-	this.createAxis(AP.xType, AP.yType);
-	this.barChartLogistics(AP.xType, AP.yType)
-
-	var graph = this.plot.select("g.mainGraph"),
-		outline = this.outline,
-		tForTransition = d3.transition().duration(500),
-		yScale = this.axisProperties.yScale,
-		xScale = this.axisProperties.xScale;
-
-	var	bars = graph.selectAll(selectValue).data(CP.data);
-	bars.enter()
-		.append(CP.mainElement)
-		.attr("class", CP.mainElementClass)
-		.attr("width",  0)
-		.attr("height", 0)
-		.attr("fill",   function(x) { return CP.colorScale(x[CP.colorScaleValue]); })
-	.merge(bars)
-		.transition(tForTransition)
-		.attr("class", CP.mainElementClass)
-		.attr("width",  function(d){ if(d.filterOutData){ return 0;}; return CP.barChartLogistics.widthFunction(d);})
-		.attr("height", function(d){ if(d.filterOutData){ return 0;}; return CP.barChartLogistics.heightFunction(d);})
-		.attr("y",  	function(d){ if(d.filterOutData){ return 0;}; return CP.barChartLogistics.yFunction(d);})			
-		.attr("x",      function(d){ if(d.filterOutData){ return 0;}; return CP.barChartLogistics.xFunction(d);}) 
-
-	bars.exit().remove();
+	this.barPlot(CP.data, CP.xValue, CP.yValue, CP.gValue, CP.stacked, currentSelection)
 }
 
  
@@ -732,6 +774,10 @@ newClone = function(obj) {
 
 
 
+// http://stackoverflow.com/questions/1960473/unique-values-in-an-array
+function onlyUnique(value, index, self) { 
+    return self.indexOf(value) === index;
+}
 
 
 
