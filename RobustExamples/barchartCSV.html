@@ -61,7 +61,7 @@
 				// Horizontal bar plot
 				var data2015 = data.filter(function(x) { return x.year == "2015"; }).slice(0, 30)
 				var horizontalBarPlot = canvas("HorizontalbarPlot", 800, 650);	
-				horizontalBarPlot.updateMargin("left", .3)
+				horizontalBarPlot.updateMargin("left", .2)
 				horizontalBarPlot.barPlot(data2015, "score", "institution");
 				horizontalBarPlot.createTips("country")
 
@@ -128,9 +128,8 @@
 				HbarChartUpdate.createTips("year")
 				HbarChartUpdate.updateDesc("Number of Publications", "" ,"Number of Publication per University of California")
 
-
-				
-				
+				console.log(data)
+				console.log(horizontalBarPlot)
 
 			})
 		</script>

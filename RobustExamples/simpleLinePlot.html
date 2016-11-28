@@ -1,0 +1,84 @@
+<!DOCTYPE HTML>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title></title>
+		<script src="../robustD3.js" charset="utf-8"></script>
+		<script src="https://d3js.org/d3.v4.0.0-rc.2.js" charset="utf-8"></script>
+	</head>
+	<body>
+	<script>
+		dataArray = [
+			{ "x": 1, "y": 5 },
+			{ "x": 2, "y": 10 },
+			{ "x": 3, "y": 15 },
+			{ "x": 4, "y": 20 },
+			{ "x": 5, "y": 25 }
+		];
+
+		var newCanvas = canvas("linePlotCanvas", 1000, 750);
+		var height = newCanvas.outline.height,
+			width = newCanvas.outline.width;
+		
+		var parseTime = d3.timeParse("%Y%m%d");
+
+		var x = d3.scaleTime().range([0, width]),
+		    y = d3.scaleLinear().range([height, 0]),
+			z = d3.scaleOrdinal(d3.schemeCategory10);
+
+		var line = d3.line()
+			.curve(d3.curveBasis)
+			.x(function(d) { return x(d.date); })
+			.y(function(d) { return y(d.temperature); });
+
+
+		setupType = function(d){
+			d.date = parseTime(d.date);
+			return d;
+		};
+
+
+		d3.tsv("tempData.txt", setupType ,function(data){
+			var cities = data.columns.slice(1).map(function(id) {
+				return {
+					id: id,
+					values: data.map(function(d) {
+						return { date: d.date, temperature: d[id]};
+					})
+				};
+			});
+			x.domain(d3.extent(data, function(d) { return d.date; }));
+			
+			y.domain([ d3.min(cities, function(c) { return  d3.min(c.values, function(d) { return d.temperature; }); }),
+					d3.max(cities, function(c) { return d3.max(c.values, function(d) { return d.temperature; }); }) ]);
+			z.domain(cities.map(function(c) { return c.id; }));
+
+
+			newCanvas.plot.append("g")
+				.attr("class", "axis axis--x")
+				.attr("transform", "translate(" + newCanvas.outline.leftMargin + "," + (newCanvas.outline.topMargin + height) + ")")
+				.call(d3.axisBottom(x));
+			
+			newCanvas.plot.append("g")
+				.attr("class", "axis axis--y")
+				.attr("transform", "translate(" + newCanvas.outline.leftMargin + "," + newCanvas.outline.topMargin + ")")
+				.call(d3.axisLeft(y));
+			
+
+			getPlot = newCanvas.plot.select("g.mainGraph");
+
+			var plotCities = getPlot.selectAll("path").data(cities);
+
+			
+			plotCities.enter().append("path")
+				.attr("class", "cities")
+				.attr("d", function(d) { return line(d.values); })
+				.style("stroke", function(d) { return z(d.id); })
+				.style("fill", "none")
+				.style("stroke-width", "1.5px");
+
+		});
+	
+	</script>
+	</body>
+</html>
